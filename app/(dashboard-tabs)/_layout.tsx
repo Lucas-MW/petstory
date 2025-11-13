@@ -4,15 +4,27 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Tabs } from 'expo-router';
 import * as React from 'react';
 
-export default function TabsLayout() {
+export default function LayoutDashboardTabs() {
   return (
     <Tabs screenOptions={{ 
       headerShown: false,
       tabBarActiveTintColor: '#C47DE8FF',     // Active tab color (purple)
-      tabBarInactiveTintColor: '#999999',     // Inactive tab color (gray)
+      tabBarInactiveTintColor: '#000000',     // Inactive tab color (gray)
+      tabBarStyle: {
+        paddingHorizontal: 10,
+        justifyContent: 'space-evenly',
+      },
+      tabBarItemStyle: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+      },
+      tabBarLabelStyle: {
+        fontWeight: 400,
+      }
     }}>
       <Tabs.Screen
-        name="index"
+        name="dashboard"
         options={{ 
           title: 'Dashboard',
           tabBarIcon: ({ color, size }) => (
@@ -39,7 +51,7 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="check_in"
+        name="check-in"
         options={{ 
           title: 'Check In',
           tabBarIcon: ({ color, size }) => (

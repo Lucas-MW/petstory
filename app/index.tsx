@@ -1,7 +1,7 @@
 import { Link } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
-export default function Index() {
+export default function PageHome() {
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
@@ -9,7 +9,7 @@ export default function Index() {
       </View>
 
       <View style={styles.contentContainer}>
-        <Link href={"/dashboard"} style={styles.buttonLink}>
+        <Link href={"/(dashboard-tabs)/dashboard"} style={styles.buttonLink}>
           <View style={styles.signInButton}>
             <Text style={styles.buttonText}>Sign In</Text>
           </View>

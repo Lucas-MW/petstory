@@ -1,14 +1,12 @@
-import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-const Search = () => {
-  const navigation = useNavigation();
-  
+
+export default function PageDashboard() {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Search</Text>
+      <Text style={styles.text}>Dashboard</Text>
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -22,5 +20,3 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
-
-export default Search

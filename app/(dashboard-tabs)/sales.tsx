@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-const Sales = () => {
+export default function PageSales() {
   return (
     <View style={styles.container}>
       <Text style={styles.text}>Sales</Text>
@@ -20,5 +20,3 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
-
-export default Sales

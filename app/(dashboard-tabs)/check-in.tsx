@@ -1,10 +1,10 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-export default function DashboardTab() {
+export default function PageCheckIn() {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Dashboard</Text>
+      <Text style={styles.text}>Check In</Text>
     </View>
   );
 }

@@ -1,12 +1,12 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-const Customers = () => {
+export default function PageCustomers() {
   return (
     <View style={styles.container}>
       <Text style={styles.text}>Customers</Text>
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -20,5 +20,3 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
-
-export default Customers
