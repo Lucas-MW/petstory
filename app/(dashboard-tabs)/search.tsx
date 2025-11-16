@@ -45,11 +45,16 @@ export default function PageSearch() {
     // Add more pet objects as needed
   ];
 
+  const trimmedSearchQuery = searchQuery.trim();
+
   const filteredPets = selectedPet ? allPets.filter(pet => pet.type === selectedPet) : allPets;
-  const searchFilteredPets = filteredPets.filter(pet => 
-    pet.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    pet.phone.includes(searchQuery)
-  );
+  const searchFilteredPets = filteredPets.filter(pet => {
+    const normalizedQuery = trimmedSearchQuery.toLowerCase().replace(/\s+/g, '');
+    const normalizedPetName = pet.name.toLowerCase().replace(/\s+/g, '');
+    const normalizedPhone = pet.phone.replace(/\s+/g, '');
+  
+    return normalizedPetName.includes(normalizedQuery) || normalizedPhone.includes(normalizedQuery);
+  });
 
   const handleClear = () => {
     setSearchQuery('');
@@ -57,7 +62,7 @@ export default function PageSearch() {
   };
 
   //found SEARCH INPUT
-  const hasSearchInput = searchQuery.length > 0;
+  const hasSearchInput = trimmedSearchQuery.length > 0;
   //no pets matching search
   const noPetsMatchingSearch = searchFilteredPets.length === 0;
   //no matching pet found error message
@@ -69,7 +74,14 @@ export default function PageSearch() {
   };
 
   const handleSearch = () => {
-    console.log('Searching for:', searchQuery);
+    const cleanQuery = searchQuery
+    .trim()  //remove leading/trailing spaces
+    .replace(/\s+/g, ""); //remove all spaces
+
+    if(!cleanQuery){ 
+      return;
+    }
+    console.log('Searching for:', cleanQuery);
   };
 
   return (
