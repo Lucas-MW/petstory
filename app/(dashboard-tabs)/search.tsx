@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Cat, Dog } from 'lucide-react-native';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import NewCustomerModal from '../../components/NewCustomerModal';
 
@@ -34,6 +34,9 @@ export default function PageSearch() {
   const [selectedPet, setSelectedPet] = useState<'dog' | 'cat' | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
+  const [debouncedQuery, setDebouncedQuery] = useState<string>('');
+  const [results, setResults] = useState<Pet[]>([]);
+  // for api call
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const allPets: Pet[] = [
@@ -45,46 +48,73 @@ export default function PageSearch() {
     // Add more pet objects as needed
   ];
 
-  const trimmedSearchQuery = searchQuery.trim();
+const trimmedSearchQuery = searchQuery.trim();
 
-  const filteredPets = selectedPet ? allPets.filter(pet => pet.type === selectedPet) : allPets;
-  const searchFilteredPets = filteredPets.filter(pet => {
-    const normalizedQuery = trimmedSearchQuery.toLowerCase().replace(/\s+/g, '');
-    const normalizedPetName = pet.name.toLowerCase().replace(/\s+/g, '');
-    const normalizedPhone = pet.phone.replace(/\s+/g, '');
-  
-    return normalizedPetName.includes(normalizedQuery) || normalizedPhone.includes(normalizedQuery);
-  });
+// const handleClear = () => {
+//   setSearchQuery('');
+//   setIsLoading(false);
+// };
 
-  const handleClear = () => {
-    setSearchQuery('');
+//found SEARCH INPUT
+const hasSearchInput = trimmedSearchQuery.length > 0;
+//no matching pet found error message
+const noMatchingPetFound = hasSearchInput && results.length === 0 && !isLoading ;
+
+
+const handleContainerPress = () => {
+  inputRef.current?.focus();
+};
+
+const handleSearch = () => {
+  const cleanQuery = searchQuery
+  .trim()  //remove leading/trailing spaces
+  .replace(/\s+/g, ""); //remove all spaces
+
+  if(!cleanQuery){ 
+    return;
+  }
+  console.log('Searching for:', cleanQuery);
+};
+
+useEffect(() => {
+  if (!trimmedSearchQuery) {
+    setDebouncedQuery('');
+    setResults([]);
     setIsLoading(false);
-  };
+    return;
+  }
 
-  //found SEARCH INPUT
-  const hasSearchInput = trimmedSearchQuery.length > 0;
-  //no pets matching search
-  const noPetsMatchingSearch = searchFilteredPets.length === 0;
-  //no matching pet found error message
-  const noMatchingPetFound = hasSearchInput && noPetsMatchingSearch;
+  const timeout = setTimeout(() => {  
+    setDebouncedQuery(trimmedSearchQuery);
+}, 300);
 
+return () => clearTimeout(timeout);
 
-  const handleContainerPress = () => {
-    inputRef.current?.focus();
-  };
+}, [trimmedSearchQuery]);
 
-  const handleSearch = () => {
-    const cleanQuery = searchQuery
-    .trim()  //remove leading/trailing spaces
-    .replace(/\s+/g, ""); //remove all spaces
+useEffect(() => {
+    const fetchPets = async () => {
+      if (!debouncedQuery) return;
+      setIsLoading(true);
+  
+      try{
+        const filtered = selectedPet ? allPets.filter(pet => pet.type === selectedPet) : allPets.filter(pet => {
+          const normalizedQuery = debouncedQuery.toLowerCase().replace(/\s+/g, '');
+          const normalizedPetName = pet.name.toLowerCase().replace(/\s+/g, '');
+          const normalizedPhone = pet.phone.replace(/\s+/g, '');
+          
+          return normalizedPetName.includes(normalizedQuery) || normalizedPhone.includes(normalizedQuery);
+        });
+        setResults(filtered);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+  
+    fetchPets();
+  }, [debouncedQuery, selectedPet]);
 
-    if(!cleanQuery){ 
-      return;
-    }
-    console.log('Searching for:', cleanQuery);
-  };
-
-  return (
+return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
         <Text style={styles.headerText}>Search</Text>
@@ -164,7 +194,7 @@ export default function PageSearch() {
               </View>
             ) : (
               <ScrollView style={styles.matchingResultsContainer} showsVerticalScrollIndicator={false}>
-                {searchFilteredPets.map((pet) => (
+                {results.map((pet) => (
               <View key={pet.id} style={styles.petCard}>
                 <Image 
                   source={petImages[pet.imageKey]}
