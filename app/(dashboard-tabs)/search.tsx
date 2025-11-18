@@ -98,7 +98,10 @@ useEffect(() => {
       setIsLoading(true);
   
       try{
-        const filtered = selectedPet ? allPets.filter(pet => pet.type === selectedPet) : allPets.filter(pet => {
+        const filtered = allPets.filter(pet => {
+          //first check pet type
+          if (selectedPet && pet.type !== selectedPet) { return false; };
+          // then check search query
           const normalizedQuery = debouncedQuery.toLowerCase().replace(/\s+/g, '');
           const normalizedPetName = pet.name.toLowerCase().replace(/\s+/g, '');
           const normalizedPhone = pet.phone.replace(/\s+/g, '');
