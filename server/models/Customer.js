@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const petSchema = new mongoose.Schema({
   petName: { type: String, required: true , trim: true },
-  type: { type: String, enum: ['Dog', 'Cat'], required: true },
+  type: { type: String, enum: ['dog', 'cat'], required: true },
   imageKey: { type: String , default: 'default'}
 },{_id:true});
 
@@ -13,6 +13,7 @@ const CustomerSchema = new mongoose.Schema({
   pets: [petSchema]
 },{ timestamps: true });
 
-CustomerSchema.index({phoneNumber:1 , "pets.petName":1});
+CustomerSchema.index({phoneNumber: 1});
+CustomerSchema.index({"pets.petName": 1});
 
 module.exports = mongoose.model('Customer', CustomerSchema);

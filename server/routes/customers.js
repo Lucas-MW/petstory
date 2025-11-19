@@ -5,27 +5,38 @@ const Customer = require('../models/Customer');
 //GET /api/customers/search?query=
 router.get('/search', async (req, res) => {
   try {
-    const { query } = req.query;
+    const { query , type } = req.query;
     if (!query) {
       return res.status(400).json({ error: 'search query is required' });
     }
 
     const cleanedQuery = query.replace(/\s+/g, '').toLowerCase();
 
-  const customers = await Customer.find({
+  const matchFilter = {
     $or: [
       { phoneNumber: { $regex: cleanedQuery, $options: 'i' } },
       { "pets.petName": { $regex: cleanedQuery, $options: 'i' } }
     ]
-  });
+  };
+
+  if (type){
+    matchFilter['pets.type'] = type.toLowerCase();
+  }
+
+  const customers = await Customer.find(matchFilter);
 
   const results = [];
   customers.forEach(customer => {
     customer.pets.forEach(pet => {
       const petName = pet.petName.replace(/\s+/g, '').toLowerCase();
       const phoneNumber = customer.phoneNumber.replace(/\s+/g, '').toLowerCase();
+      const petType = pet.type.toLowerCase();
 
-      if (petName.includes(cleanedQuery) || phoneNumber.includes(cleanedQuery)) {
+      // If type filter is applied, ensure it matches
+      const matchesQuery = petName.includes(cleanedQuery) || phoneNumber.includes(cleanedQuery);
+      const matchesType = !type  || petType === type.toLowerCase();
+
+      if (matchesQuery && matchesType) {
         results.push({
           id: pet._id,
           name: pet.petName,
@@ -57,7 +68,7 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'missing required fields' });
     }
 
-    if (!['Dog', 'Cat'].includes(petType)) {
+    if (!['dog', 'cat'].includes(petType)) {
       return res.status(400).json({ error: 'invalid pet type' });
     }
 
@@ -88,7 +99,5 @@ router.post('/', async (req, res) => {
     res.status(500).json({ error: 'server error during customer creation' });
   }
 });
-
-// GET /api/customers - Get all customers (do we need this?)
 
 module.exports = router;

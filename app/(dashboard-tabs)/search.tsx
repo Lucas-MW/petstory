@@ -1,123 +1,83 @@
+import { formatPhoneNumber } from '@/utils/phone';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Cat, Dog } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import NewCustomerModal from '../../components/NewCustomerModal';
-
-interface CustomerFormData {
-  petName: string;
-  customerName: string;
-  phoneNumber: string;
-  address: string;
-  petType: 'dog' | 'cat' | null;
-}
+import NewCustomerModal, { CustomerFormData } from '../../components/NewCustomerModal';
 
 interface Pet{
   id: string;
   name: string;
-  phone: string;
+  phoneNumber: string;
   type: 'dog' | 'cat';
   imageKey: string;
 }
 
 // Image map for require() - can't use dynamic paths
-const petImages: Record<string, any> = {
-  '13': require('../../assets/images/13.jpg'),
-  '14': require('../../assets/images/14.jpg'),
-  'bawi': require('../../assets/images/bawi.jpg'),
-  'c1': require('../../assets/images/c1.jpg'),
+const defaultImages = {
+  dog: require('../../assets/images/dog-profile.png'),
+  cat: require('../../assets/images/cat-profile.png'),
 };
+
+const getPetImage = (petType: 'dog' | 'cat') => {
+  return petType === 'dog' ? defaultImages.dog : defaultImages.cat;
+}
 
 export default function PageSearch() {
   const inputRef = useRef<TextInput>(null);
   const [selectedPet, setSelectedPet] = useState<'dog' | 'cat' | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
-  const [debouncedQuery, setDebouncedQuery] = useState<string>('');
   const [results, setResults] = useState<Pet[]>([]);
-  // for api call
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const allPets: Pet[] = [
-    { id: '1', name: 'Bella', phone: '(714) 788-7688', type: 'dog', imageKey: '13' },
-    { id: '2', name: 'Max', phone: '(213) 123-4567', type: 'dog', imageKey: '14' },
-    { id: '3', name: '바위', phone: '(616) 773-1234', type: 'cat', imageKey: 'bawi' },
-    { id: '4', name: 'Brisket', phone: '(626) 666-6666', type: 'dog', imageKey: '14' },
-    { id: '5', name: 'Bella', phone: '(714) 444-4444', type: 'cat', imageKey: 'c1' },
-    // Add more pet objects as needed
-  ];
+  const trimmedSearchQuery = searchQuery.trim();
+  const hasSearchInput = trimmedSearchQuery.length > 0;
+  const noMatchingPetFound = hasSearchInput && results.length === 0 && !isLoading;
 
-const trimmedSearchQuery = searchQuery.trim();
+  // Backend handles both search and pet type filtering
+  useEffect(() => {
+    if (!trimmedSearchQuery) {
+      setResults([]);
+      setIsLoading(false);
+      return;
+    }
 
-// const handleClear = () => {
-//   setSearchQuery('');
-//   setIsLoading(false);
-// };
-
-//found SEARCH INPUT
-const hasSearchInput = trimmedSearchQuery.length > 0;
-//no matching pet found error message
-const noMatchingPetFound = hasSearchInput && results.length === 0 && !isLoading ;
-
-
-const handleContainerPress = () => {
-  inputRef.current?.focus();
-};
-
-const handleSearch = () => {
-  const cleanQuery = searchQuery
-  .trim()  //remove leading/trailing spaces
-  .replace(/\s+/g, ""); //remove all spaces
-
-  if(!cleanQuery){ 
-    return;
-  }
-  console.log('Searching for:', cleanQuery);
-};
-
-useEffect(() => {
-  if (!trimmedSearchQuery) {
-    setDebouncedQuery('');
-    setResults([]);
-    setIsLoading(false);
-    return;
-  }
-
-  const timeout = setTimeout(() => {  
-    setDebouncedQuery(trimmedSearchQuery);
-}, 300);
-
-return () => clearTimeout(timeout);
-
-}, [trimmedSearchQuery]);
-
-useEffect(() => {
-    const fetchPets = async () => {
-      if (!debouncedQuery) return;
-      setIsLoading(true);
-  
-      try{
-        const filtered = allPets.filter(pet => {
-          //first check pet type
-          if (selectedPet && pet.type !== selectedPet) { return false; };
-          // then check search query
-          const normalizedQuery = debouncedQuery.toLowerCase().replace(/\s+/g, '');
-          const normalizedPetName = pet.name.toLowerCase().replace(/\s+/g, '');
-          const normalizedPhone = pet.phone.replace(/\s+/g, '');
-          
-          return normalizedPetName.includes(normalizedQuery) || normalizedPhone.includes(normalizedQuery);
-        });
-        setResults(filtered);
+    setIsLoading(true);
+    const timeout = setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({ query: trimmedSearchQuery });
+        if (selectedPet) {
+          params.append('type', selectedPet);
+        }
+        
+        const response = await fetch(`http://192.168.4.20:3000/api/customers/search?${params}`);
+        const data = await response.json();
+        setResults(data);
+        console.log('Search results:', data);
+      } catch (error) {
+        console.error('Search error:', error);
+        setResults([]);
       } finally {
         setIsLoading(false);
       }
-    };
-  
-    fetchPets();
-  }, [debouncedQuery, selectedPet]);
+    }, 300);
 
-return (
+    return () => clearTimeout(timeout);
+  }, [trimmedSearchQuery, selectedPet]);
+
+  const handleContainerPress = () => {
+    inputRef.current?.focus();
+  };
+
+  const handleSearch = () => {
+    const cleanQuery = searchQuery.trim().replace(/\s+/g, "");
+    if (!cleanQuery) return;
+    console.log('Searching for:', cleanQuery);
+  };
+
+  return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
         <Text style={styles.headerText}>Search</Text>
@@ -200,12 +160,12 @@ return (
                 {results.map((pet) => (
               <View key={pet.id} style={styles.petCard}>
                 <Image 
-                  source={petImages[pet.imageKey]}
+                  source={getPetImage(pet.type)}
                 style={styles.petImage} 
               />
               <View style={styles.petInfo}>
                 <Text style={styles.petName}>{pet.name}</Text>
-                <Text style={styles.petPhone}>{pet.phone}</Text>
+                <Text style={styles.petPhone}>{formatPhoneNumber(pet.phoneNumber)}</Text>
                 
                 {/* Check-in Button */}
                 <TouchableOpacity 

@@ -1,3 +1,4 @@
+import { formatPhoneNumber, normalizedPhone } from '@/utils/phone';
 import { Ionicons } from '@expo/vector-icons';
 import { Cat, Dog } from 'lucide-react-native';
 import React, { useRef, useState } from 'react';
@@ -9,7 +10,7 @@ interface NewCustomerModalProps {
   onSave?: (data: CustomerFormData) => void;
 }
 
-interface CustomerFormData {
+export interface CustomerFormData {
   petName: string;
   customerName: string;
   phoneNumber: string;
@@ -29,27 +30,100 @@ export default function NewCustomerModal({ visible, onClose, onSave }: NewCustom
   const [phoneNumber, setPhoneNumber] = useState('');
   const [address, setAddress] = useState('');
 
-  const handleSave = () => {
-    const formData: CustomerFormData = {
-      petName,
-      customerName,
-      phoneNumber,
-      address,
-      petType: selectedPetType,
-    };
-    
-    if (onSave) {
-      onSave(formData);
+  const [errors, setErrors] = useState({
+  petName: '',
+  customerName: '',
+  phoneNumber: '',
+  address: '',
+  petType: ''
+});
+
+const validateForm = (): boolean => {
+  const newErrors = {
+    petName: '',
+    customerName: '',
+    phoneNumber: '',
+    address: '',
+    petType: ''
+  };
+
+  if (!petName.trim()) {
+    newErrors.petName = '* Pet name is required';
+  }
+
+  if (!customerName.trim()) {
+    newErrors.customerName = '* Customer name is required';
+  }
+
+  if (phoneNumber.length !== 10) {
+    newErrors.phoneNumber = '* Phone number must be 10 digits';
+  }
+
+  if (!address.trim()) {
+    newErrors.address = '* Address is required';
+  }
+
+  if (!selectedPetType) {
+    newErrors.petType = '* Please select Dog or Cat';
+  }
+
+  setErrors(newErrors);
+  return !Object.values(newErrors).some(error => error !== '');
+};
+
+  const handleSave = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    if (!selectedPetType) {
+      return;
     }
     
-    // Reset form
-    setPetName('');
-    setCustomerName('');
-    setPhoneNumber('');
-    setAddress('');
-    setSelectedPetType(null);
-    
-    onClose();
+    const data: CustomerFormData = {
+    petName: petName.trim(),
+    customerName: customerName.trim(),
+    phoneNumber,
+    address: address.trim(),
+    petType: selectedPetType,
+};
+
+    try {
+      const response = await fetch('http://192.168.4.20:3000/api/customers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          petName: data.petName,
+          customerName: data.customerName,
+          phoneNumber: data.phoneNumber,
+          address: data.address,
+          petType: data.petType,
+        })
+      });
+      const result = await response.json();
+      console.log('New customer created:', result);
+      onClose();
+      if (onSave) {
+        onSave(data);
+        //reset form fields
+        setPetName('');
+        setCustomerName('');
+        setPhoneNumber('');
+        setAddress('');
+        setSelectedPetType(null);
+        setErrors({
+          petName: '',
+          customerName: '',
+          phoneNumber: '',
+          address: '',
+          petType: ''
+        });
+      }
+    } catch (error) {
+      console.error('Error saving new customer:', error);
+    }
   };
 
   return (
@@ -76,7 +150,12 @@ export default function NewCustomerModal({ visible, onClose, onSave }: NewCustom
                 styles.petSelectionButton,
                 selectedPetType === 'dog' && styles.petSelectionActive
               ]}
-              onPress={() => setSelectedPetType(selectedPetType === 'dog' ? null : 'dog')}
+              onPress={() => {
+                setSelectedPetType(selectedPetType === 'dog' ? null : 'dog');
+                if (errors.petType) {
+                  setErrors({ ...errors, petType: '' });
+                }
+              }}
             >
               <Dog size={20} color={selectedPetType === 'dog' ? '#4850E4FF' : '#323742FF'} />
               <Text style={[
@@ -84,13 +163,18 @@ export default function NewCustomerModal({ visible, onClose, onSave }: NewCustom
                 selectedPetType === 'dog' && styles.petSelectionTextActive
               ]}> Dog</Text>
             </TouchableOpacity>
-
+            
             <TouchableOpacity 
               style={[
                 styles.petSelectionButton,
                 selectedPetType === 'cat' && styles.petSelectionActive
               ]}
-              onPress={() => setSelectedPetType(selectedPetType === 'cat' ? null : 'cat')}
+              onPress={() => {
+                setSelectedPetType(selectedPetType === 'cat' ? null : 'cat');
+                if (errors.petType) {
+                  setErrors({ ...errors, petType: '' });
+                }
+              }}
             >
               <Cat size={20} color={selectedPetType === 'cat' ? '#4850E4FF' : '#323742FF'} />
               <Text style={[
@@ -99,25 +183,38 @@ export default function NewCustomerModal({ visible, onClose, onSave }: NewCustom
               ]}> Cat</Text>
             </TouchableOpacity>
           </View>
+          {errors.petType && (
+          <Text style={styles.errorText}>{errors.petType}</Text>
+        )}
         </View>
 
         {/* Pet Name Input */}
         <View style={styles.insertContainer}>
           <Text style={styles.inputLabel}>Pet Name</Text>
-          <Pressable onPress={() => petNameInputRef.current?.focus()}>
+          <Pressable onPress={() => {
+            petNameInputRef.current?.focus();
+          }}>
             <View style={styles.inputContainer}>
               <Ionicons name='paw-outline' size={20} color="#999999" />
               <TextInput
                 ref={petNameInputRef}
                 style={styles.input}
-                placeholder="Bella"
                 placeholderTextColor="#999999"
+                placeholder="Bella"
                 value={petName}
-                onChangeText={setPetName}
+                onChangeText={(text) => {
+                  setPetName(text);
+                  if (errors.petName) {
+                    setErrors({ ...errors, petName: '' });
+                  }
+                }}
                 autoCapitalize="words"
               />
             </View>
           </Pressable>
+          {errors.petName && (
+            <Text style={styles.errorText}>{errors.petName}</Text>
+          )}
         </View>
 
         {/* Customer Name Input */}
@@ -129,14 +226,22 @@ export default function NewCustomerModal({ visible, onClose, onSave }: NewCustom
               <TextInput
                 ref={customerNameInputRef}
                 style={styles.input}
-                placeholder="John Doe"
                 placeholderTextColor="#999999"
+                placeholder='John Doe'
                 value={customerName}
-                onChangeText={setCustomerName}
+                onChangeText={(text) => {
+                  setCustomerName(text);
+                  if (errors.customerName) {
+                    setErrors({ ...errors, customerName: '' });
+                  }
+                }}
                 autoCapitalize="words"
               />
             </View>
           </Pressable>
+          {errors.customerName && (
+            <Text style={styles.errorText}>{errors.customerName}</Text>
+          )}
         </View>
 
         {/* Phone Number Input */}
@@ -148,14 +253,24 @@ export default function NewCustomerModal({ visible, onClose, onSave }: NewCustom
               <TextInput
                 ref={phoneInputRef}
                 style={styles.input}
-                placeholder="(123) 456-7890"
                 placeholderTextColor="#999999"
-                value={phoneNumber}
-                onChangeText={setPhoneNumber}
+                value={formatPhoneNumber(phoneNumber)}
+                placeholder='Digits only'
+                onChangeText={(text) => {
+                  const digits = normalizedPhone(text);
+                  if (digits.length <= 10) setPhoneNumber(digits)
+                    if (errors.phoneNumber) {
+                      setErrors({ ...errors, phoneNumber: '' });
+                    }
+                }}
                 keyboardType="phone-pad"
+                maxLength={14}
               />
             </View>
           </Pressable>
+          {errors.phoneNumber && (
+            <Text style={styles.errorText}>{errors.phoneNumber}</Text>
+          )}
         </View>
 
         {/* Address Input */}
@@ -167,13 +282,21 @@ export default function NewCustomerModal({ visible, onClose, onSave }: NewCustom
               <TextInput
                 ref={addressInputRef}
                 style={styles.input}
-                placeholder="123 Main St 92801"
                 placeholderTextColor="#999999"
+                placeholder="123 Main St 92801"
                 value={address}
-                onChangeText={setAddress}
+                onChangeText={(text) => {
+                  setAddress(text);
+                  if (errors.address) {
+                    setErrors({ ...errors, address: '' });
+                  }
+                }}
               />
             </View>
           </Pressable>
+          {errors.address && (
+            <Text style={styles.errorText}>{errors.address}</Text>
+          )}
         </View>
 
         {/* Save Button */}
@@ -248,6 +371,18 @@ const styles = StyleSheet.create({
     color: '#4850E4FF',
     fontWeight: '600',
   },
+inputContainerError: {
+  borderColor: '#ef4444',
+  borderWidth: 2,
+},
+errorText: {
+  color: '#ef4444',
+  fontSize: 14,
+  marginTop: 8,
+  fontWeight: '500',
+  width: '100%',
+  maxWidth: 400,
+},
   insertContainer: {
     flexDirection: 'column',
     width: '100%',
