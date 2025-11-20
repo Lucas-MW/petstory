@@ -170,7 +170,15 @@ export default function PageSearch() {
                 {/* Check-in Button */}
                 <TouchableOpacity 
                   style={styles.checkInButton}
-                  onPress={() => router.push('/(dashboard-tabs)/check-in')}
+                  onPress={() => router.push({
+                    pathname: '/(dashboard-tabs)/check-in',
+                    params: {
+                      petId: pet.id,
+                      petName: pet.name,
+                      petType: pet.type,
+                      phoneNumber: pet.phoneNumber,
+                    }
+                  })}
                 >
                   <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
                   <Text style={styles.checkInText}>Quick Check-in</Text>

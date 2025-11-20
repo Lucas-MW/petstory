@@ -42,15 +42,6 @@ export default function LayoutDashboardTabs() {
         }}
       />
       <Tabs.Screen
-        name="customers"
-        options={{ 
-          title: 'Customers',
-          tabBarIcon: ({ color, size }) => (
-            <Feather name="users" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="check-in"
         options={{ 
           title: 'Check In',
@@ -60,11 +51,11 @@ export default function LayoutDashboardTabs() {
         }}
       />
       <Tabs.Screen
-        name="sales"
+        name="history"
         options={{ 
-          title: 'Sales',
+          title: 'History',
           tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="attach-money" size={size} color={color} />
+            <MaterialIcons name="history" size={size} color={color} />
           ),
         }}
       />
