@@ -51,11 +51,11 @@ export default function LayoutDashboardTabs() {
         }}
       />
       <Tabs.Screen
-        name="history"
+        name="reports"
         options={{ 
-          title: 'History',
+          title: 'Reports',
           tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="history" size={size} color={color} />
+            <MaterialIcons name="attach-money" size={size} color={color} />
           ),
         }}
       />

@@ -12,6 +12,9 @@ interface Pet{
   phoneNumber: string;
   type: 'dog' | 'cat';
   imageKey: string;
+  customerId: string;
+  customerName: string;
+  customerAddress: string;
 }
 
 // Image map for require() - can't use dynamic paths
@@ -77,7 +80,7 @@ export default function PageSearch() {
     console.log('Searching for:', cleanQuery);
   };
 
-  return (
+  return ( 
     <View style={styles.container}>
       <View style={styles.headerContainer}>
         <Text style={styles.headerText}>Search</Text>
@@ -158,7 +161,8 @@ export default function PageSearch() {
             ) : (
               <ScrollView style={styles.matchingResultsContainer} showsVerticalScrollIndicator={false}>
                 {results.map((pet) => (
-              <View key={pet.id} style={styles.petCard}>
+              <TouchableOpacity onPress={() => router.push({pathname: '/pet-history/profile',
+  params: { petId: pet.id, petName: pet.name, petType: pet.type, phoneNumber: pet.phoneNumber, customerId: pet.customerId, customerName: pet.customerName, customerAddress: pet.customerAddress, imageKey: pet.imageKey}})} key={pet.id} style={styles.petCard}>
                 <Image 
                   source={getPetImage(pet.type)}
                 style={styles.petImage} 
@@ -177,6 +181,9 @@ export default function PageSearch() {
                       petName: pet.name,
                       petType: pet.type,
                       phoneNumber: pet.phoneNumber,
+                      customerId: pet.customerId,
+                      customerName: pet.customerName,
+                      customerAddress: pet.customerAddress,
                     }
                   })}
                 >
@@ -184,7 +191,7 @@ export default function PageSearch() {
                   <Text style={styles.checkInText}>Quick Check-in</Text>
                 </TouchableOpacity>
               </View>
-            </View>
+            </TouchableOpacity>
             ))}
           </ScrollView>
         )}

@@ -1,10 +1,10 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-export default function PageHistory() {
+export default function PageReports() {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>History</Text>
+      <Text style={styles.text}>Reports</Text>
     </View>
   );
 }

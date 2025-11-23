@@ -1,7 +1,7 @@
 import { formatPhoneNumber } from '@/utils/phone';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Keyboard, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface Pet {
@@ -9,6 +9,15 @@ interface Pet {
   name: string;
   type: 'dog' | 'cat';
   phoneNumber: string;
+  imageKey: string;
+  customerId: string;
+  customerName: string;
+  customerAddress: string;
+  totalPrice?: number;
+  tipPrice?: number;
+  additionalCharges?: number;
+  services?: 'bath' | 'groom' | 'full' | 'nail' | 'other';
+  paymentMethod?: 'cash' | 'card' | 'zelle' | 'venmo' | 'applepay' | 'other';
 }
 
 // Default images for pets
@@ -38,6 +47,10 @@ export default function PageCheckIn() {
         name: params.petName as string,
         type: params.petType as 'dog' | 'cat',
         phoneNumber: params.phoneNumber as string,
+        imageKey: params.imageKey as string,
+        customerId: params.customerId as string,
+        customerName: params.customerName as string,
+        customerAddress: params.customerAddress as string,
       };
       setCheckInPets((prevPets) =>{
         const exists = prevPets.some(pet => pet.id === newPet.id);
@@ -45,7 +58,7 @@ export default function PageCheckIn() {
         return [...prevPets, newPet];
       });
     }
-  }, [params.petId, params.petName, params.petType, params.phoneNumber]);
+  }, [params.petId, params.petName, params.petType, params.phoneNumber, params.imageKey, params.customerId, params.customerName, params.customerAddress]);
 
   return (
     <View style={styles.container}>
@@ -72,7 +85,21 @@ export default function PageCheckIn() {
       />
       <View style={styles.petInfo}>
         <Text style={styles.petName}>{pet.name}</Text>
-        <Text style={styles.petPhone}>{formatPhoneNumber(pet.phoneNumber)}</Text>
+        
+        <View style={styles.infoRow}>
+          <Ionicons name="call-outline" size={16} color="#666" />
+          <Text style={styles.petPhone}>{formatPhoneNumber(pet.phoneNumber)}</Text>
+        </View>
+        
+        <View style={styles.infoRow}>
+          <Ionicons name="person-outline" size={16} color="#666" />
+          <Text style={styles.infoText}>{pet.customerName}</Text>
+        </View>
+        
+        <View style={styles.infoRow}>
+          <Ionicons name="home-outline" size={16} color="#666" />
+          <Text style={styles.infoText}>{pet.customerAddress}</Text>
+        </View>
         
         <TouchableOpacity 
           style={styles.checkInButton}
@@ -136,12 +163,24 @@ const styles = StyleSheet.create({
   petName: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: 8,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+    gap: 8,
   },
   petPhone: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 12,
+    fontWeight: '500',
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#666',
+    flex: 1,
+    fontWeight: '400',
   },
   checkInButton: {
     flexDirection: 'row',
