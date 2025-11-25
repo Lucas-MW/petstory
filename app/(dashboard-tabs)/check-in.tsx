@@ -1,24 +1,8 @@
-import { formatPhoneNumber } from '@/utils/phone';
-import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
+import moment from 'moment-timezone';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Keyboard, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from 'react-native';
 
-interface Pet {
-  id: string;
-  name: string;
-  type: 'dog' | 'cat';
-  phoneNumber: string;
-  imageKey: string;
-  customerId: string;
-  customerName: string;
-  customerAddress: string;
-  totalPrice?: number;
-  tipPrice?: number;
-  additionalCharges?: number;
-  services?: 'bath' | 'groom' | 'full' | 'nail' | 'other';
-  paymentMethod?: 'cash' | 'card' | 'zelle' | 'venmo' | 'applepay' | 'other';
-}
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 // Default images for pets
 const defaultImages = {
@@ -32,194 +16,58 @@ const getPetImage = (petType: 'dog' | 'cat') => {
 };
 
 export default function PageCheckIn() {
-  const params = useLocalSearchParams();
-  const [checkInPets, setCheckInPets] = useState<Pet[]>([]);
-  const isLoading = false;
+  const [activeCheckIns, setActiveCheckIns] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    console.log('useEffect triggered, params:', params);
-    // Fetch or update check-in pets logic can go here
-    if (params.petId) {
-      console.log('Adding pet:', params.petName);
-      // Example: Add pet to check-in list
-      const newPet: Pet = {
-        id: params.petId as string,
-        name: params.petName as string,
-        type: params.petType as 'dog' | 'cat',
-        phoneNumber: params.phoneNumber as string,
-        imageKey: params.imageKey as string,
-        customerId: params.customerId as string,
-        customerName: params.customerName as string,
-        customerAddress: params.customerAddress as string,
-      };
-      setCheckInPets((prevPets) =>{
-        const exists = prevPets.some(pet => pet.id === newPet.id);
-        if (exists) return prevPets;
-        return [...prevPets, newPet];
-      });
+    fetchActiveCheckIns();
+  }, []);
+
+    // Fetch or update check-in pets logic can go he
+  const fetchActiveCheckIns = async () => {
+    try {
+      const today = moment().tz('America/Los_Angeles').format('YYYY-MM-DD');
+      const response = await fetch(`${API_URL}/checkins?status=in-progress&date=${today}`);
+      const data = await response.json();
+      setActiveCheckIns(data);
+    } catch (error) {
+      console.error('Error fetching active check-ins:', error);
+    } finally {
+      setIsLoading(false);
     }
-  }, [params.petId, params.petName, params.petType, params.phoneNumber, params.imageKey, params.customerId, params.customerName, params.customerAddress]);
+  };
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerContainer}>
-        <Text style={styles.headerText}>Check In</Text>
-      </View>
-
-      <ScrollView
-        testID="checkin-scroll"
-        keyboardDismissMode="on-drag"
-        onScrollBeginDrag={Keyboard.dismiss}
-      >
-        {/* pet info cards */}
-        {isLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#C47DE8FF" />
-          </View>
-        ) : checkInPets.length > 0 ? (
-          checkInPets.map((pet) => (
-    <View key={pet.id} style={styles.petCard}>
-      <Image 
-        source={getPetImage(pet.type)}
-        style={styles.petImage} 
-      />
-      <View style={styles.petInfo}>
-        <Text style={styles.petName}>{pet.name}</Text>
-        
-        <View style={styles.infoRow}>
-          <Ionicons name="call-outline" size={16} color="#666" />
-          <Text style={styles.petPhone}>{formatPhoneNumber(pet.phoneNumber)}</Text>
+      <Text style={styles.headerText}>Active Check-ins</Text>
+      
+      {isLoading ? (
+        <ActivityIndicator />
+      ) : activeCheckIns.length > 0 ? (
+        <FlatList
+          data={activeCheckIns}
+          renderItem={({ item }) => (
+            <TouchableOpacity 
+              style={styles.checkInCard}
+              onPress={() => router.push(`/check-in/${item._id}`)}
+            >
+              <Text style={styles.customerName}>{item.customerName}</Text>
+              <Text style={styles.petsInfo}>
+                {item.pets.map(p => `${p.petName} - ${p.service}`).join(', ')}
+              </Text>
+              <Text style={styles.totalPrice}>Total: ${item.totalPrice}</Text>
+              <Text style={styles.timeInfo}>
+                Checked in: {formatTime(item.checkInTime)}
+              </Text>
+            </TouchableOpacity>
+          )}
+        />
+      ) : (
+        <View style={styles.emptyState}>
+          <Text>No active check-ins</Text>
+          <Text>All pets are groomed for now!</Text>
         </View>
-        
-        <View style={styles.infoRow}>
-          <Ionicons name="person-outline" size={16} color="#666" />
-          <Text style={styles.infoText}>{pet.customerName}</Text>
-        </View>
-        
-        <View style={styles.infoRow}>
-          <Ionicons name="home-outline" size={16} color="#666" />
-          <Text style={styles.infoText}>{pet.customerAddress}</Text>
-        </View>
-        
-        <TouchableOpacity 
-          style={styles.checkInButton}
-          onPress={() => {
-            console.log('Checking in:', pet.name);
-          }}
-        >
-          <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
-          <Text style={styles.checkInText}>Confirm Check-in</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  ))
-) : (
-  <View style={styles.emptyStateContainer}>
-    <Text style={styles.emptyStateText}>No pets selected</Text>
-    <Text style={styles.emptyStateSubtext}>Select pets from the search page</Text>
-  </View>
-)}
-      </ScrollView>
+      )}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: '6%',
-    paddingVertical: 60,
-    paddingTop: '20%',
-  },
-  headerContainer: {
-    alignItems: 'center',
-    borderColor: '#DEE1E6FF',
-    borderBottomWidth: 2,
-    paddingBottom: '5%',
-  },
-  headerText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  petCard: {
-    flexDirection: 'row',
-    padding: 16,
-    marginTop: 12,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    borderColor: '#DEE1E6FF',
-    borderWidth: 1,
-  },
-  petImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-  },
-  petInfo: {
-    flex: 1,
-    marginLeft: 16,
-    justifyContent: 'space-between',
-  },
-  petName: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-    gap: 8,
-  },
-  petPhone: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
-  },
-  infoText: {
-    fontSize: 14,
-    color: '#666',
-    flex: 1,
-    fontWeight: '400',
-  },
-  checkInButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: '#C47DE8FF',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    gap: 6,
-  },
-  checkInText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  matchingResultsContainer: {
-    maxHeight: '82%',
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-  },
-  emptyStateContainer: {
-  alignItems: 'center',
-  justifyContent: 'center',
-  paddingTop: '20%',
-},
-emptyStateText: {
-  fontSize: 20,
-  fontWeight: '600',
-  color: '#323742FF',
-  marginBottom: 8,
-},
-emptyStateSubtext: {
-  fontSize: 16,
-  color: '#666',
-  textAlign: 'center',
-  paddingHorizontal: 40,
-},
-});

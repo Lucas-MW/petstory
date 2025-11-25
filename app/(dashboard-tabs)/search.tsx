@@ -162,7 +162,16 @@ export default function PageSearch() {
               <ScrollView style={styles.matchingResultsContainer} showsVerticalScrollIndicator={false}>
                 {results.map((pet) => (
               <TouchableOpacity onPress={() => router.push({pathname: '/pet-history/profile',
-  params: { petId: pet.id, petName: pet.name, petType: pet.type, phoneNumber: pet.phoneNumber, customerId: pet.customerId, customerName: pet.customerName, customerAddress: pet.customerAddress, imageKey: pet.imageKey}})} key={pet.id} style={styles.petCard}>
+              params: { 
+                petId: pet.id, 
+                petName: pet.name, 
+                petType: pet.type, 
+                phoneNumber: pet.phoneNumber, 
+                customerId: pet.customerId, 
+                customerName: pet.customerName, 
+                customerAddress: pet.customerAddress, 
+                imageKey: pet.imageKey
+                }})} key={pet.id} style={styles.petCard}>
                 <Image 
                   source={getPetImage(pet.type)}
                 style={styles.petImage} 
