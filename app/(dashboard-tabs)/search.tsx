@@ -1,10 +1,9 @@
-import { formatPhoneNumber } from '@/utils/phone';
+import { formatPhoneNumber } from '@/app/utils/phone';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Cat, Dog } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import NewCustomerModal, { CustomerFormData } from '../../components/NewCustomerModal';
 
 interface Pet{
   id: string;
@@ -31,7 +30,6 @@ export default function PageSearch() {
   const inputRef = useRef<TextInput>(null);
   const [selectedPet, setSelectedPet] = useState<'dog' | 'cat' | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
   const [results, setResults] = useState<Pet[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -161,7 +159,7 @@ export default function PageSearch() {
             ) : (
               <ScrollView style={styles.matchingResultsContainer} showsVerticalScrollIndicator={false}>
                 {results.map((pet) => (
-              <TouchableOpacity onPress={() => router.push({pathname: '/pet-history/profile',
+              <TouchableOpacity onPress={() => router.push({pathname: '/pet-info/profile',
               params: { 
                 petId: pet.id, 
                 petName: pet.name, 
@@ -212,21 +210,14 @@ export default function PageSearch() {
               <Image source={require('../../assets/images/no-result.png')} style={styles.noResultsIcon} />
             </View>
             <Text style={styles.noResultsMessage}>Try adjusting your search</Text>
-            <TouchableOpacity style={styles.addNewCustomerButton} onPress={() => setIsModalVisible(true)}>
-              <Text style={styles.addNewCustomerText}>+ New Customer</Text>
-            </TouchableOpacity>
+            <TouchableOpacity style={styles.addNewCustomerButton}onPress={() => router.push('/customer/register')}>
+          <Text style={styles.addNewCustomerText}>+ New Customer</Text>
+        </TouchableOpacity>
           </View>
         )}
           </>
         )}
-        <NewCustomerModal
-              visible={isModalVisible}
-              onClose={() => setIsModalVisible(false)}
-              onSave={(data: CustomerFormData) => {
-                console.log('New customer data:', data);
-                // TODO: Send data to backend API
-              }}
-        />
+        
       </View>
       </ScrollView>
     </View>

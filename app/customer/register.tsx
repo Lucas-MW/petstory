@@ -1,14 +1,9 @@
-import { formatPhoneNumber, normalizedPhone } from '@/utils/phone';
+import { formatPhoneNumber, normalizePhone } from '@/app/utils/phone.js';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { Cat, Dog } from 'lucide-react-native';
 import React, { useRef, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-
-interface NewCustomerModalProps {
-  visible: boolean;
-  onClose: () => void;
-  onSave?: (data: CustomerFormData) => void;
-}
+import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export interface CustomerFormData {
   petName: string;
@@ -18,7 +13,7 @@ export interface CustomerFormData {
   petType: 'dog' | 'cat' | null;
 }
 
-export default function NewCustomerModal({ visible, onClose, onSave }: NewCustomerModalProps) {
+export default function RegisterCustomer() {
   const petNameInputRef = useRef<TextInput>(null);
   const customerNameInputRef = useRef<TextInput>(null);
   const phoneInputRef = useRef<TextInput>(null);
@@ -29,6 +24,7 @@ export default function NewCustomerModal({ visible, onClose, onSave }: NewCustom
   const [customerName, setCustomerName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [address, setAddress] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [errors, setErrors] = useState({
   petName: '',
@@ -79,6 +75,8 @@ const validateForm = (): boolean => {
     if (!selectedPetType) {
       return;
     }
+
+    setIsSubmitting(true);
     
     const data: CustomerFormData = {
     petName: petName.trim(),
@@ -94,48 +92,49 @@ const validateForm = (): boolean => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          petName: data.petName,
-          customerName: data.customerName,
-          phoneNumber: data.phoneNumber,
-          address: data.address,
-          petType: data.petType,
-        })
+        body: JSON.stringify(data)
       });
+
+      if(!response.ok){
+        throw new Error('Failed to create new customer');
+      }
+
       const result = await response.json();
       console.log('New customer created:', result);
-      onClose();
-      if (onSave) {
-        onSave(data);
-        //reset form fields
-        setPetName('');
-        setCustomerName('');
-        setPhoneNumber('');
-        setAddress('');
-        setSelectedPetType(null);
-        setErrors({
-          petName: '',
-          customerName: '',
-          phoneNumber: '',
-          address: '',
-          petType: ''
-        });
-      }
-    } catch (error) {
-      console.error('Error saving new customer:', error);
-    }
-  };
+      
+
+      //show success
+      Alert.alert('Success!', `${data.petName} have been registered.`,
+      [{ 
+        text: 'OK', 
+        onPress: () => {
+          // Reset form
+          setPetName('');
+          setCustomerName('');
+          setPhoneNumber('');
+          setAddress('');
+          setSelectedPetType(null);
+          setErrors({ petName: '', customerName: '', phoneNumber: '', address: '', petType: '' });
+          
+          router.back();
+        }
+      }]
+    );
+    
+  } catch (error) {
+    console.error('Error saving new customer:', error);
+    Alert.alert('Error', 'Failed to create customer. Please try again.');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <View style={styles.container}>
+    <View style={styles.container}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Header */}
         <View style={styles.headerContainer}>
-          <TouchableOpacity onPress={onClose} style={styles.backButton}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="#1f2937" />
           </TouchableOpacity>
           <Text style={styles.header}>Welcome to HappyPet!</Text>
@@ -257,7 +256,7 @@ const validateForm = (): boolean => {
                 value={formatPhoneNumber(phoneNumber)}
                 placeholder='Digits only'
                 onChangeText={(text) => {
-                  const digits = normalizedPhone(text);
+                  const digits = normalizePhone(text);
                   if (digits.length <= 10) setPhoneNumber(digits)
                     if (errors.phoneNumber) {
                       setErrors({ ...errors, phoneNumber: '' });
@@ -300,21 +299,21 @@ const validateForm = (): boolean => {
         </View>
 
         {/* Save Button */}
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>Save Details</Text>
+        <TouchableOpacity style={[styles.saveButton, isSubmitting && { backgroundColor: '#D1D5DB' }]} onPress={handleSave} disabled={isSubmitting}>
+          <Text style={styles.saveButtonText}>{isSubmitting ? 'Creating...' : 'Save Details'}</Text>
         </TouchableOpacity>
-      </View>
-    </Modal>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: '6%',
     paddingVertical: 60,
     paddingTop: '20%',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   headerContainer: {
     width: '100%',

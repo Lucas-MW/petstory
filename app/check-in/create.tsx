@@ -1,7 +1,7 @@
+import { Picker } from '@react-native-picker/picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface checkInFormData {
   service: string;
@@ -75,12 +75,13 @@ export default function checkInCreatePage(){
 
     const checkIn = await response.json();
     // Navigate to check-in details page
-    router.replace(`/check-in/${checkIn._id}`);
+    router.replace(`/check-in/${checkIn._id}` as any);
   } catch (err: any) {
     setError(err instanceof Error ? err.message : 'An unexpected error occurred.' );
   } finally {
     setIsSubmitting(false);
-  }, [isValid, pet , formData]);
+  }
+  }, [isValid, pet, formData]);
 
   return (
     <View style={styles.container}>
@@ -107,8 +108,6 @@ export default function checkInCreatePage(){
           style={styles.input}
           value={formData.totalPrice}
           onChangeText={(value) => updateField('totalPrice', value)}
-          value={formData.totalPrice}
-          onChangeText={(value) => updateField('totalPrice', value)}
           editable={!isSubmitting}
         />
       </View>
@@ -128,6 +127,8 @@ export default function checkInCreatePage(){
           <ActivityIndicator color="#fff" />
         ) : (
           <Text style={styles.createButtonText}>Create Check-in</Text>
+        )}
+      </TouchableOpacity>
     </View>
   );
 }

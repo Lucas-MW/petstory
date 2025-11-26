@@ -1,19 +1,14 @@
 const mongoose = require('mongoose');
 
-const petSchema = new mongoose.Schema({
-  petName: { type: String, required: true , trim: true },
-  type: { type: String, enum: ['dog', 'cat'], required: true },
-  imageKey: { type: String , default: 'default'}
-},{_id:true});
-
 const CustomerSchema = new mongoose.Schema({
-  customerName: { type: String, required: true , trim: true },
-  phoneNumber: { type: String, required: true , trim: true },
-  address: { type: String, required: true , trim: true},
-  pets: [petSchema]
+  name: 
+  { type: String, required: true , trim: true },
+  phone: 
+  { type: String, required: true , trim: true , unique: true,},
+  address: 
+  { type: String, required: true , trim: true},
 },{ timestamps: true });
 
-CustomerSchema.index({phoneNumber: 1});
-CustomerSchema.index({"pets.petName": 1});
+//CustomerSchema.index({phone: 1}, { unique: true });  we have unique constraint in phone field
 
 module.exports = mongoose.model('Customer', CustomerSchema);

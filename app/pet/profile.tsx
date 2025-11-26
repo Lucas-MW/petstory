@@ -1,4 +1,4 @@
-import { formatPhoneNumber } from '@/utils/phone';
+import { formatPhoneNumber } from '@/app/utils/phone';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -11,7 +11,7 @@ interface Visit {
   paymentMethod: string;
 }
 
-export default function PetHistory() {
+export default function PetProfile() {
   const { petId, petName, customerName, phoneNumber, customerAddress, customerId, petType } = useLocalSearchParams();
   const [history, setHistory] = useState<Visit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -23,16 +23,16 @@ export default function PetHistory() {
 };
 
   useEffect(() => {
-    fetchHistory();
+    fetchProfile();
   }, []);
 
-  const fetchHistory = async () => {
+  const fetchProfile = async () => {
     try {
       const response = await fetch(`http://192.168.4.20:3000/api/history/pet/${petId}`);
       const data = await response.json();
       setHistory(data);
     } catch (error) {
-      console.error('Error fetching history:', error);
+      console.error('Error fetching profile:', error);
     } finally {
       setIsLoading(false);
     }
@@ -52,7 +52,7 @@ export default function PetHistory() {
         })
       });
       router.push({
-        pathname: '/(dashboard-tabs)/check-in',
+        pathname: '/check-in/create',
                     params: {
                       petId,
                       petName,
