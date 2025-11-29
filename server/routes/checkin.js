@@ -2,27 +2,32 @@ const express = require('express');
 const router = express.Router();
 const CheckIn = require('../models/Checkin');
 
-//POST /api/check-in ( minimal , just from qucik check-in)
+//POST /api/check-in ( minimal , from check-in details)
 router.post('/', async (req, res) => {
+  console.log('=== CheckIn POST Request ===');
+  console.log('Body:', req.body);
   try {
-    const { petId, customerId, petName, phoneNumber, customerName, imageKey } = req.body;
+    const { petId, customerId, petName, phoneNumber, customerName, imageKey, totalPrice, services } = req.body;
+
+    console.log('Extracted:', { petId, customerId, petName, customerName, phoneNumber, imageKey, totalPrice , services});
 
     if (!petId || !customerId || !petName || !phoneNumber || !customerName) {
       return res.status(400).json({ error: 'customerId, petId, petName, customerName, and customerPhone are required' });
     }
-    const newCheckIn = new Customer({
+    const newCheckIn = new CheckIn({
       petId,
       customerId,
       petName,
       phoneNumber,
       customerName,
-      services,
-      paymentMethod,
-      imageKey,
-      totalPrice: 0,
+      services: services || [],
+      paymentMethod: null,
+      imageKey: imageKey || 'default',
+      totalPrice: totalPrice || 0,
       tipPrice: 0,
       additionalCharges: 0,
-      checkInTime: new Date()
+      checkInTime: new Date(),
+      status: 'in-progress'
     });
 
     const savedCheckIn = await newCheckIn.save();
@@ -73,3 +78,5 @@ router.delete('/:id', async (req, res) => {
     res.status(500).json({ error: 'Server error during check-in deletion' });
   }
 });
+
+module.exports = router;

@@ -1,3 +1,7 @@
+const express = require('express');
+const router = express.Router();
+const DailyHistory = require('../models/DailyHistory');
+
 //GET visit history for a specific pet
 router.get('/pet/:petId', async (req, res) => {
   try {
@@ -27,3 +31,5 @@ router.get('/pet/:petId', async (req, res) => {
     res.status(500).json({ error: 'Server error fetching pet history' });
   }
 });
+
+module.exports = router;

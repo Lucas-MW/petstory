@@ -46,12 +46,12 @@ router.get('/search', async (req, res) => {
       seenPetIds.add(pet._id.toString());
       
       results.push({
-        id: pet._id,
-        name: pet.name,
+        petId: pet._id.toString(),
+        petName: pet.name,
         type: pet.type,
         imageKey: pet.imageKey,
         phoneNumber: pet.ownerId.phone,
-        customerId: pet.ownerId._id,
+        customerId: pet.ownerId._id.toString(),
         customerName: pet.ownerId.name,
         customerAddress: pet.ownerId.address
       });
@@ -69,12 +69,12 @@ router.get('/search', async (req, res) => {
         if (type && pet.type.toLowerCase() !== type.toLowerCase()) continue;
         
         results.push({
-          id: pet._id,
-          name: pet.name,
+          petId: pet._id.toString(),
+          petName: pet.name,
           type: pet.type,
           imageKey: pet.imageKey,
           phoneNumber: customer.phone,
-          customerId: customer._id,
+          customerId: customer._id.toString(),
           customerName: customer.name,
           customerAddress: customer.address
         });

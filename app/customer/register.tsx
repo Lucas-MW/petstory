@@ -1,4 +1,4 @@
-import { formatPhoneNumber, normalizePhone } from '@/app/utils/phone.js';
+import { formatPhoneNumber, normalizePhone } from '@/utils/phone';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Cat, Dog } from 'lucide-react-native';

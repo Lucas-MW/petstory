@@ -1,4 +1,4 @@
-import { formatPhoneNumber } from '@/app/utils/phone';
+import { formatPhoneNumber } from '@/utils/phone';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -29,6 +29,7 @@ export default function PetProfile() {
   const fetchProfile = async () => {
     try {
       const response = await fetch(`http://192.168.4.20:3000/api/history/pet/${petId}`);
+      console.log('Response status:', response.status);
       const data = await response.json();
       setHistory(data);
     } catch (error) {

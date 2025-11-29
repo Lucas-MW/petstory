@@ -25,6 +25,12 @@ app.get ('/', (req, res) => {
 const customersRoutes = require ('./routes/customers');
 app.use ('/api/customers', customersRoutes);
 
+const historyRoutes = require('./routes/history');
+app.use('/api/history', historyRoutes);
+
+const checkInRouter = require('./routes/checkin');
+app.use('/api/checkins', checkInRouter);
+
 //start server
 app.listen (PORT, () => {
   console.log (`Server is running on port ${PORT}`);

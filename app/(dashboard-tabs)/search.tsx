@@ -1,4 +1,4 @@
-import { formatPhoneNumber } from '@/app/utils/phone';
+import { formatPhoneNumber } from '@/utils/phone';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Cat, Dog } from 'lucide-react-native';
@@ -6,8 +6,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface Pet{
-  id: string;
-  name: string;
+  petId: string;
+  petName: string;
   phoneNumber: string;
   type: 'dog' | 'cat';
   imageKey: string;
@@ -159,23 +159,23 @@ export default function PageSearch() {
             ) : (
               <ScrollView style={styles.matchingResultsContainer} showsVerticalScrollIndicator={false}>
                 {results.map((pet) => (
-              <TouchableOpacity onPress={() => router.push({pathname: '/pet-info/profile',
+              <TouchableOpacity onPress={() => router.push({pathname: '/pet/profile',
               params: { 
-                petId: pet.id, 
-                petName: pet.name, 
+                petId: pet.petId, 
+                petName: pet.petName, 
                 petType: pet.type, 
                 phoneNumber: pet.phoneNumber, 
                 customerId: pet.customerId, 
                 customerName: pet.customerName, 
                 customerAddress: pet.customerAddress, 
                 imageKey: pet.imageKey
-                }})} key={pet.id} style={styles.petCard}>
+                }})} key={pet.petId} style={styles.petCard}>
                 <Image 
                   source={getPetImage(pet.type)}
                 style={styles.petImage} 
               />
               <View style={styles.petInfo}>
-                <Text style={styles.petName}>{pet.name}</Text>
+                <Text style={styles.petName}>{pet.petName}</Text>
                 <Text style={styles.petPhone}>{formatPhoneNumber(pet.phoneNumber)}</Text>
                 
                 {/* Check-in Button */}
@@ -184,8 +184,8 @@ export default function PageSearch() {
                   onPress={() => router.push({
                     pathname: '/(dashboard-tabs)/check-in',
                     params: {
-                      petId: pet.id,
-                      petName: pet.name,
+                      petId: pet.petId,
+                      petName: pet.petName,
                       petType: pet.type,
                       phoneNumber: pet.phoneNumber,
                       customerId: pet.customerId,
