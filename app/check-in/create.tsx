@@ -72,7 +72,7 @@ export default function checkInCreatePage(){
     console.log(JSON.stringify(requestBody, null, 2));
 
     try {
-      const response = await fetch('http://192.168.4.20:3000/api/checkins', {
+      const response = await fetch('http://192.168.4.20:3000/api/checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
@@ -87,7 +87,7 @@ export default function checkInCreatePage(){
     console.log('CheckIn response:', checkIn);
     console.log('CheckIn ID:', checkIn._id);
     // Navigate to check-in details page
-    router.replace(`/check-in/${checkIn._id}` as any);
+    router.replace('/(dashboard-tabs)/check-in');
   } catch (err: any) {
     setError(err instanceof Error ? err.message : 'An unexpected error occurred.' );
   } finally {

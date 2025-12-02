@@ -38,7 +38,32 @@ router.post('/', async (req, res) => {
   }
 });
 
+// GET get all check ins
+router.get('/', async (req, res) => {
+  try {
+    const checkIns = await CheckIn.find({status: 'in-progress'}).sort({ checkInTime: -1 });
+    console.log(`Found ${checkIns.length} active in-progress check-ins:`, checkIns);
+    res.json(checkIns);
+  } catch (error) {
+    console.error('get all Check-ins error:', error);
+    res.status(500).json({ error: 'Server error during fetching all check-ins' });
+  }
+});
+
 // GET get todays check in 
+router.get('/:id', async (req, res) => {
+  try {
+    console.log('GET /check-in/:id called with', req.params.id);
+    const checkIn = await CheckIn.findById(req.params.id); 
+    if (!checkIn) {
+      return res.status(404).json({ error: 'check-in not found' });
+    }
+    res.json(checkIn);
+  } catch (error) {
+    console.error('get Check-in error:', error);
+    res.status(500).json({ error: 'Server error during check-in' });
+  }
+});
 
 //PATCH update check-in fields
 router.patch('/:id', async (req, res) => {

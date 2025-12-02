@@ -28,8 +28,8 @@ app.use ('/api/customers', customersRoutes);
 const historyRoutes = require('./routes/history');
 app.use('/api/history', historyRoutes);
 
-const checkInRouter = require('./routes/checkin');
-app.use('/api/checkins', checkInRouter);
+const checkInRoutes = require('./routes/checkin');
+app.use('/api/checkin', checkInRoutes);
 
 //start server
 app.listen (PORT, () => {

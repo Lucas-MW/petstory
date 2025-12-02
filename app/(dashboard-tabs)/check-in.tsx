@@ -31,12 +31,12 @@ interface CheckInDetail {
 }
 
 const PAYMENT_METHODS = [
-  { label: 'Cash', value: 'cash' },
-  { label: 'Card', value: 'card' },
-  { label: 'Zelle', value: 'zelle' },
-  { label: 'Venmo', value: 'venmo' },
-  { label: 'Apple Pay', value: 'applepay' },
-  { label: 'Other', value: 'other' },
+  { label: 'Cash', value: 'Cash' },
+  { label: 'Card', value: 'Card' },
+  { label: 'Zelle', value: 'Zelle' },
+  { label: 'Venmo', value: 'Venmo' },
+  { label: 'Apple Pay', value: 'Apple Pay' },
+  { label: 'Other', value: 'Other' },
 ];
 
 export default function CheckInDetailPage() {
@@ -66,8 +66,10 @@ export default function CheckInDetailPage() {
 
   const fetchCheckIn = async () => {
     try {
-      const response = await fetch(`http://192.168.4.20:3000/api/checkins/${id}`);
+      const response = await fetch(`http://192.168.4.20:3000/api/checkin/`);
       const data = await response.json();
+      console.log('CheckIn response:', data);
+
       setCheckIn(data);
       setTipPrice(data.tipPrice.toString());
       setAdditionalCharges(data.additionalCharges.toString());
@@ -84,11 +86,12 @@ export default function CheckInDetailPage() {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`http://192.168.4.20:3000/api/checkins/${id}`, {
+      const response = await fetch(`http://192.168.4.20:3000/api/checkin/`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tipPrice: parseFloat(tipPrice),
+          additionalCharges: parseFloat(additionalCharges),
           totalPrice: totalPrice,
           paymentMethod: paymentMethod,
         }),
@@ -131,27 +134,42 @@ export default function CheckInDetailPage() {
         {/* Customer Info */}
         <View style={styles.section}>
           <Text style={styles.customerName}>{checkIn.customerName}</Text>
-          <Text style={styles.info}>📞 {checkIn.phoneNumber}</Text>
-          <Text style={styles.info}>🕐 Checked in: {new Date(checkIn.checkInTime).toLocaleTimeString()}</Text>
+          <View style={styles.infoRow}>
+            <Ionicons name="call" size={16} color="#666" />
+            <Text style={styles.info}>{checkIn.phoneNumber}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Ionicons name="time" size={16} color="#666" />
+            <Text style={styles.info}>Checked in: {new Date(checkIn.checkInTime).toLocaleTimeString()}</Text>
+          </View>
         </View>
 
         {/* Pet Info */}
         <View style={styles.section}>
           <Text style={styles.label}>Pet Name</Text>
-          <Text style={styles.petName}>🐕 {checkIn.petName}</Text>
+          <View style={styles.infoRow}>
+            <Ionicons name="paw" size={18} color="#C47DE8" />
+            <Text style={styles.petName}>{checkIn.petName}</Text>
+          </View>
         </View>
 
         {/* Services */}
         <View style={styles.section}>
           <Text style={styles.label}>Services</Text>
           {(checkIn.services || []).map((service, index) => (
-            <Text key={index} style={styles.service}>✓ {service}</Text>
+            <View key={index} style={styles.serviceRow}>
+              <Ionicons name="checkmark-circle" size={16} color="#C47DE8" />
+              <Text style={styles.service}>{service}</Text>
+            </View>
           ))}
         </View>
 
         {/* Pricing */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>💰 Pricing</Text>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="cash" size={20} color="#C47DE8" />
+            <Text style={styles.sectionTitle}>Pricing</Text>
+          </View>
           
           <View style={styles.priceRow}>
             <Text style={styles.priceLabel}>Base Price</Text>
@@ -306,6 +324,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginBottom: 4,
+    marginLeft: 4,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+    gap: 8,
   },
   label: {
     fontSize: 14,
@@ -315,15 +340,28 @@ const styles = StyleSheet.create({
   petName: {
     fontSize: 18,
     fontWeight: '500',
+    marginLeft: 4,
   },
   service: {
     fontSize: 14,
     color: '#333',
     marginBottom: 4,
+    marginLeft: 4,
+  },
+  serviceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+    gap: 8,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
+    marginLeft: 8,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 16,
   },
   priceRow: {
