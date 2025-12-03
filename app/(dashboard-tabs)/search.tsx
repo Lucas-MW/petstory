@@ -182,7 +182,7 @@ export default function PageSearch() {
                 <TouchableOpacity 
                   style={styles.checkInButton}
                   onPress={() => router.push({
-                    pathname: '/(dashboard-tabs)/check-in',
+                    pathname: '/pet/profile',
                     params: {
                       petId: pet.petId,
                       petName: pet.petName,

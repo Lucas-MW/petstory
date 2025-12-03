@@ -41,9 +41,19 @@ router.post('/', async (req, res) => {
 // GET get all check ins
 router.get('/', async (req, res) => {
   try {
-    const checkIns = await CheckIn.find({status: 'in-progress'}).sort({ checkInTime: -1 });
-    console.log(`Found ${checkIns.length} active in-progress check-ins:`, checkIns);
-    res.json(checkIns);
+    const checkIns = await CheckIn.find({status: 'in-progress'})
+      .populate('petId', 'imageKey type')
+      .sort({ checkInTime: -1 });
+    
+    // Transform the data to include the pet's imageKey and type
+    const transformedCheckIns = checkIns.map(checkIn => ({
+      ...checkIn.toObject(),
+      imageKey: checkIn.petId?.imageKey || checkIn.imageKey || 'default',
+      petType: checkIn.petId?.type
+    }));
+    
+    console.log(`Found ${transformedCheckIns.length} active in-progress check-ins`);
+    res.json(transformedCheckIns);
   } catch (error) {
     console.error('get all Check-ins error:', error);
     res.status(500).json({ error: 'Server error during fetching all check-ins' });

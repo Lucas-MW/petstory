@@ -1,26 +1,34 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  FlatList,
+  Alert,
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
 
+const defaultImages = {
+  dog: require('../../assets/images/dog-profile.png'),
+  cat: require('../../assets/images/cat-profile.png'),
+};
+
 interface CheckInDetail {
+  _id: string;
   petId: string;
   petName: string;
   customerName: string;
   phoneNumber: string;
   imageKey: string;
+  petType?: 'dog' | 'cat';
   services: string[];
   totalPrice: number;
   tipPrice: number;
@@ -35,45 +43,25 @@ const PAYMENT_METHODS = [
   { label: 'Card', value: 'Card' },
   { label: 'Zelle', value: 'Zelle' },
   { label: 'Venmo', value: 'Venmo' },
-  { label: 'Apple Pay', value: 'Apple Pay' },
   { label: 'Other', value: 'Other' },
 ];
 
 export default function CheckInDetailPage() {
-  const { id } = useLocalSearchParams();
-  const [checkIn, setCheckIn] = useState<CheckInDetail | null>(null);
-  const [tipPrice, setTipPrice] = useState('0');
-  const [additionalCharges, setAdditionalCharges] = useState('0');
-  const [paymentMethod, setPaymentMethod] = useState<string>('');
-  const [dropdownVisible, setDropdownVisible] = useState(false);
+  const [checkIn, setCheckIn] = useState<CheckInDetail[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedCheckIn, setSelectedCheckIn] = useState<CheckInDetail | null>(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
-  const totalPrice = useMemo(() => {
-    if (!checkIn) return 0;
-    return (
-      checkIn.totalPrice +
-      parseFloat(tipPrice || '0') +
-      parseFloat(additionalCharges || '0')
-    );
-  }, [checkIn, tipPrice, additionalCharges]);
-
-  const selectedPaymentLabel = PAYMENT_METHODS.find(m => m.value === paymentMethod)?.label || 'Select payment method';
-
-  useEffect(() => {
+    useEffect(() => {
     fetchCheckIn();
-  }, [id]);
+  }, []);
 
   const fetchCheckIn = async () => {
     try {
       const response = await fetch(`http://192.168.4.20:3000/api/checkin/`);
       const data = await response.json();
       console.log('CheckIn response:', data);
-
       setCheckIn(data);
-      setTipPrice(data.tipPrice.toString());
-      setAdditionalCharges(data.additionalCharges.toString());
-      setPaymentMethod(data.paymentMethod || '');
     } catch (error) {
       console.error('Fetch error:', error);
     } finally {
@@ -81,207 +69,295 @@ export default function CheckInDetailPage() {
     }
   };
 
-  const handleComplete = async () => {
-    if (!paymentMethod) return;
+  const updateCheckIn = (petId: string, field: keyof CheckInDetail, value: any) => {
+    setCheckIn((prev) =>
+      prev.map((item) =>
+        item.petId === petId ? { ...item, [field]: value } : item
+      )
+    );
+    
+    // Also update selectedCheckIn if it's the same item
+    if (selectedCheckIn && selectedCheckIn.petId === petId) {
+      setSelectedCheckIn((prev) => prev ? { ...prev, [field]: value } : null);
+    }
+  }
 
-    setIsSubmitting(true);
+  const handleTapCard = (checkInItem: CheckInDetail) => {
+    setSelectedCheckIn(checkInItem);
+    setIsModalVisible(true);
+  }
+
+const handleCancel = async (checkInItem: CheckInDetail) => {
+  const performCancel = async (checkInItem: CheckInDetail) => {
     try {
-      const response = await fetch(`http://192.168.4.20:3000/api/checkin/`, {
+      const response = await fetch(`http://192.168.4.20:3000/api/checkin/${checkInItem._id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (response.ok) {
+        // Remove from list
+        setCheckIn((prev) => prev.filter(item => item._id !== checkInItem._id));
+      } else {
+        alert('Failed to cancel check-in. Please try again.');
+      }
+    } catch (error) {
+      console.error('Cancel error:', error);
+      alert('Network error. Please check your connection.');
+    }
+  };
+
+  Alert.alert(
+    'Confirm Cancellation',
+    `Are you sure you want to cancel check-in for ${checkInItem.petName}?`,
+    [
+      { text: 'No', style: 'cancel' },
+      { text: 'Yes', onPress: () => performCancel(checkInItem) }
+    ]
+  );
+};
+
+  const handleComplete = async (checkInItem: CheckInDetail) => {
+    if (!checkInItem?.paymentMethod) {
+      alert('Please select a payment method before complete.');
+      return;
+    }
+
+    try {
+      
+      const finalTotal = checkInItem.totalPrice + (checkInItem.tipPrice || 0) + (checkInItem.additionalCharges || 0);
+
+      const response = await fetch(`http://192.168.4.20:3000/api/checkin/${checkInItem._id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          tipPrice: parseFloat(tipPrice),
-          additionalCharges: parseFloat(additionalCharges),
-          totalPrice: totalPrice,
-          paymentMethod: paymentMethod,
+          tipPrice: checkInItem.tipPrice || 0,
+          additionalCharges: checkInItem.additionalCharges || 0,
+          totalPrice: finalTotal,
+          paymentMethod: checkInItem.paymentMethod,
+          status: 'Completed',
         }),
       });
 
       if (response.ok) {
-        router.back();
+        setCheckIn((prev) => prev.filter(item => item._id === checkInItem._id ? { ...item, status: 'Completed' } : item));
+        setIsModalVisible(false);
+        setSelectedCheckIn(null);
+        alert(`${checkInItem.petName}, ${checkInItem.phoneNumber} marked as completed.`);
+        
       }
     } catch (error) {
       console.error('Complete error:', error);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
-  if (isLoading) {
+    if (isLoading) {
     return (
-      <View style={styles.loading}>
-        <ActivityIndicator size="large" color="#C47DE8" />
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Active Check-ins</Text>
+        </View>
+        <View style={styles.loading}>
+          <ActivityIndicator size="large" color="#C47DE8" />
+        </View>
       </View>
     );
   }
 
-  if (!checkIn) return null;
-
   return (
-    <KeyboardAvoidingView 
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Active Check-in</Text>
-        <View style={{ width: 24 }} />
+        <Text style={styles.headerTitle}>Active Check-ins</Text>
       </View>
 
       <ScrollView style={styles.content}>
-        {/* Customer Info */}
-        <View style={styles.section}>
-          <Text style={styles.customerName}>{checkIn.customerName}</Text>
-          <View style={styles.infoRow}>
-            <Ionicons name="call" size={16} color="#666" />
-            <Text style={styles.info}>{checkIn.phoneNumber}</Text>
+        {checkIn.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Ionicons name="clipboard-outline" size={64} color="#ccc" />
+            <Text style={styles.emptyStateText}>No active check-ins</Text>
           </View>
-          <View style={styles.infoRow}>
-            <Ionicons name="time" size={16} color="#666" />
-            <Text style={styles.info}>Checked in: {new Date(checkIn.checkInTime).toLocaleTimeString()}</Text>
-          </View>
-        </View>
+        ) : (
+          checkIn.map((checkIn) => {
+            const finalTotal = 
+              checkIn.totalPrice + 
+              (checkIn.tipPrice || 0) + 
+              (checkIn.additionalCharges || 0);
+            
+            const hasImage = checkIn.imageKey && checkIn.imageKey !== 'default';
+            const imageSource = hasImage 
+              ? { uri: `http://192.168.4.20:3000/uploads/${checkIn.imageKey}` }
+              : defaultImages[checkIn.petType || 'dog'];
 
-        {/* Pet Info */}
-        <View style={styles.section}>
-          <Text style={styles.label}>Pet Name</Text>
-          <View style={styles.infoRow}>
-            <Ionicons name="paw" size={18} color="#C47DE8" />
-            <Text style={styles.petName}>{checkIn.petName}</Text>
-          </View>
-        </View>
+            return (
+              <Pressable key={checkIn._id} onPress={() => handleTapCard(checkIn)}>
+              <View style={styles.checkInCard}>
+                {/* Header with Image */}
+                <View style={styles.cardHeader}>
+                  <Image
+                    source={imageSource}
+                    style={styles.petImage}
+                  />
+                  <View style={styles.headerContent}>
+                    <View style={styles.nameAndStatus}>
+                      <Text style={styles.petName}>{checkIn.petName}</Text>
+                      <View style={styles.statusBadge}>
+                        <Text style={styles.statusText}>{checkIn.status}</Text>
+                      </View>
+                    </View>
+                    
+                    {/* Customer */}
+                    <View style={styles.infoRow}>
+                      <Ionicons name="person-outline" size={16} color="#666" />
+                      <Text style={styles.customerName}>{checkIn.customerName}</Text>
+                    </View>
+                    
+                    {/* Phone */}
+                    <View style={styles.infoRow}>
+                      <Ionicons name="call-outline" size={16} color="#666" />
+                      <Text style={styles.phone}>{checkIn.phoneNumber}</Text>
+                    </View>
 
-        {/* Services */}
-        <View style={styles.section}>
-          <Text style={styles.label}>Services</Text>
-          {(checkIn.services || []).map((service, index) => (
-            <View key={index} style={styles.serviceRow}>
-              <Ionicons name="checkmark-circle" size={16} color="#C47DE8" />
-              <Text style={styles.service}>{service}</Text>
-            </View>
-          ))}
-        </View>
+                    {/* Check-in Time */}
+                    <View style={styles.infoRow}>
+                      <Ionicons name="calendar-outline" size={16} color="#666" />
+                      <Text style={styles.time}>
+                        Checked In: {new Date(checkIn.checkInTime).toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles' })}
+                      </Text>
+                    </View>
 
-        {/* Pricing */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="cash" size={20} color="#C47DE8" />
-            <Text style={styles.sectionTitle}>Pricing</Text>
-          </View>
-          
-          <View style={styles.priceRow}>
-            <Text style={styles.priceLabel}>Base Price</Text>
-            <Text style={styles.priceValue}>{(checkIn.totalPrice || 0).toFixed(2)}</Text>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Tip</Text>
-            <TextInput
-              style={styles.input}
-              value={tipPrice}
-              onChangeText={setTipPrice}
-              keyboardType="numeric"
-              placeholder="0.00"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Additional Charges</Text>
-            <TextInput
-              style={styles.input}
-              value={additionalCharges}
-              onChangeText={setAdditionalCharges}
-              keyboardType="numeric"
-              placeholder="0.00"
-            />
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total Price</Text>
-            <Text style={styles.totalValue}>£{totalPrice.toFixed(2)}</Text>
-          </View>
-        </View>
-
-        {/* Payment Method */}
-        <View style={styles.section}>
-          <Text style={styles.label}>Payment Method</Text>
-          
-          <TouchableOpacity 
-            style={styles.dropdownTrigger}
-            onPress={() => setDropdownVisible(true)}
-          >
-            <Text style={[styles.dropdownText, !paymentMethod && styles.placeholder]}>
-              {selectedPaymentLabel}
-            </Text>
-            <Ionicons name="chevron-down" size={20} color="#666" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Buttons */}
-        <View style={styles.buttonRow}>
-          <TouchableOpacity 
-            style={styles.cancelButton}
-            onPress={() => router.back()}
-          >
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={[
-              styles.completeButton,
-              (!paymentMethod || isSubmitting) && styles.completeButtonDisabled
-            ]}
-            onPress={handleComplete}
-            disabled={!paymentMethod || isSubmitting}
-          >
-            {isSubmitting ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.completeButtonText}>Mark Complete</Text>
-            )}
-          </TouchableOpacity>
-        </View>
+                    {/* Services */}
+                    <View style={styles.infoRow}>
+                      <Ionicons name="cut-outline" size={16} color="#C47DE8" />
+                      <Text style={styles.serviceText}>
+                        {(checkIn.services || []).join(', ')}
+                      </Text>
+                    </View>
+                </View>
+              </View>
+              
+              {/* Cancel appointment - bottom right */}
+              <View style={styles.cancelButtonContainer}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => handleCancel(checkIn)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+              </View>
+              </Pressable>
+            );
+          })
+        )}
       </ScrollView>
 
-      {/* Dropdown Modal */}
+      {/* Modal for Check-in Details */}
       <Modal
-        visible={dropdownVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setDropdownVisible(false)}
+        visible={isModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setIsModalVisible(false)}
       >
-        <TouchableOpacity 
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setDropdownVisible(false)}
         >
-          <View style={styles.dropdownList}>
-            <FlatList
-              data={PAYMENT_METHODS}
-              keyExtractor={(item) => item.value}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.dropdownItem}
-                  onPress={() => {
-                    setPaymentMethod(item.value);
-                    setDropdownVisible(false);
-                  }}
-                >
-                  <Text style={styles.dropdownItemText}>{item.label}</Text>
-                  {paymentMethod === item.value && (
-                    <Ionicons name="checkmark" size={20} color="#C47DE8" />
-                  )}
-                </TouchableOpacity>
-              )}
-            />
+          <View style={styles.modalContent}>
+            {selectedCheckIn && (
+              <ScrollView keyboardShouldPersistTaps="handled">
+                {/* Modal Header */}
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>{`Check out ${selectedCheckIn.petName}`}</Text>
+                  <TouchableOpacity onPress={() => setIsModalVisible(false)}>
+                    <Ionicons name="close" size={28} color="#666" />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Pricing */}
+                <View style={styles.section}>
+                  <Text style={styles.sectionLabel}>Pricing</Text>
+                  
+                  <View style={styles.priceRow}>
+                    <Text style={styles.priceLabel}>Base Price</Text>
+                    <Text style={styles.priceValue}>${selectedCheckIn.totalPrice.toFixed(2)}</Text>
+                  </View>
+
+                  <View style={styles.inputRow}>
+                    <Text style={styles.inputLabel}>Tip</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={selectedCheckIn.tipPrice?.toString() || '0'}
+                      onChangeText={(text) => updateCheckIn(selectedCheckIn.petId, 'tipPrice', parseFloat(text) || 0)}
+                      keyboardType="numeric"
+                      placeholder="0.00"
+                    />
+                  </View>
+
+                  <View style={styles.inputRow}>
+                    <Text style={styles.inputLabel}>Additional</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={selectedCheckIn.additionalCharges?.toString() || '0'}
+                      onChangeText={(text) => updateCheckIn(selectedCheckIn.petId, 'additionalCharges', parseFloat(text) || 0)}
+                      keyboardType="numeric"
+                      placeholder="0.00"
+                    />
+                  </View>
+
+                  <View style={styles.divider} />
+
+                  <View style={styles.totalRow}>
+                    <Text style={styles.totalLabel}>Total</Text>
+                    <Text style={styles.totalValue}>
+                      ${(selectedCheckIn.totalPrice + (selectedCheckIn.tipPrice || 0) + (selectedCheckIn.additionalCharges || 0)).toFixed(2)}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Payment Method */}
+                <View style={styles.section}>
+                  <Text style={styles.sectionLabel}>Payment Method</Text>
+                  <View style={styles.paymentButtons}>
+                    {PAYMENT_METHODS.map((method) => (
+                      <TouchableOpacity
+                        key={method.value}
+                        style={[
+                          styles.paymentButton,
+                          selectedCheckIn.paymentMethod === method.value && styles.paymentButtonActive
+                        ]}
+                        onPress={() => updateCheckIn(selectedCheckIn.petId, 'paymentMethod', method.value)}
+                      >
+                        <Text style={[
+                          styles.paymentButtonText,
+                          selectedCheckIn.paymentMethod === method.value && styles.paymentButtonTextActive
+                        ]}>
+                          {method.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
+                {/* Action Buttons */}
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity
+                    style={[
+                      styles.completeButton,
+                      !selectedCheckIn.paymentMethod && styles.completeButtonDisabled
+                    ]}
+                    onPress={() => handleComplete(selectedCheckIn)}
+                    disabled={!selectedCheckIn.paymentMethod}
+                  >
+                    <Ionicons name="checkmark-circle" size={20} color="#fff" />
+                    <Text style={styles.completeButtonText}>Mark Complete</Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            )}
           </View>
-        </TouchableOpacity>
+        </KeyboardAvoidingView>
       </Modal>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -296,107 +372,165 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     padding: 16,
     paddingTop: 60,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomWidth: 2,
+    borderBottomColor: '#DEE1E6FF',
+    backgroundColor: '#fff',
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   content: {
     flex: 1,
-    padding: 16,
+    padding: 12,
   },
-  section: {
-    marginBottom: 24,
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 100,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: 16,
+  },
+  checkInCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#DEE1E6FF',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+    gap: 10,
+  },
+  petImage: {
+    width: 65,
+    height: 65,
+    borderRadius: 32.5,
+    backgroundColor: '#E0E0E0',
+  },
+  headerContent: {
+    flex: 1,
+  },
+  nameAndStatus: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  petName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000',
+  },
+  statusBadge: {
+    backgroundColor: '#E8F5E9',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#4CAF50',
+  },
+  statusText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#4CAF50',
+    textTransform: 'capitalize',
   },
   customerName: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  info: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#666',
-    marginBottom: 4,
-    marginLeft: 4,
+    marginTop: 2,
+  },
+  time: {
+    fontSize: 11,
+    color: '#666',
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
-    gap: 8,
+    gap: 6,
+    marginTop: 3,
   },
-  label: {
-    fontSize: 14,
+  phone: {
+    fontSize: 13,
     color: '#666',
-    marginBottom: 8,
   },
-  petName: {
-    fontSize: 18,
-    fontWeight: '500',
-    marginLeft: 4,
+  section: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#DEE1E6FF',
   },
-  service: {
-    fontSize: 14,
-    color: '#333',
-    marginBottom: 4,
-    marginLeft: 4,
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 6,
+  },
+  servicesSection: {
+    marginTop: 8,
   },
   serviceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
-    gap: 8,
+    gap: 6,
+    marginBottom: 3,
   },
-  sectionTitle: {
-    fontSize: 16,
+  service: {
+    fontSize: 13,
+    color: '#333',
+  },
+  serviceText: {
+    fontSize: 13,
     fontWeight: '600',
-    marginLeft: 8,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
+    color: '#C47DE8',
   },
   priceRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 6,
   },
   priceLabel: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#666',
   },
   priceValue: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
   },
-  inputGroup: {
-    marginBottom: 16,
+  inputRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
   },
   inputLabel: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#666',
-    marginBottom: 8,
   },
   input: {
     borderWidth: 1,
     borderColor: '#E0E0E0',
     borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: '#FAFAFA',
+    padding: 8,
+    fontSize: 14,
+    backgroundColor: '#fff',
+    width: 80,
+    textAlign: 'right',
   },
   divider: {
     height: 1,
-    backgroundColor: '#E0E0E0',
-    marginVertical: 16,
+    backgroundColor: '#DEE1E6FF',
+    marginVertical: 8,
   },
   totalRow: {
     flexDirection: 'row',
@@ -407,86 +541,98 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   totalValue: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#C47DE8',
   },
-  dropdownTrigger: {
+  paymentButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 12,
+    gap: 8,
+  },
+  paymentButton: {
+    flex: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#E0E0E0',
-    borderRadius: 8,
-    backgroundColor: '#F5F5F5',
-  },
-  dropdownText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  placeholder: {
-    color: '#999',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  dropdownList: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    maxHeight: 300,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  dropdownItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
   },
-  dropdownItemText: {
-    fontSize: 16,
-    color: '#333',
+  paymentButtonActive: {
+    borderColor: '#C47DE8',
+    backgroundColor: '#F3E8FA',
   },
-  buttonRow: {
+  paymentButtonText: {
+    fontSize: 12,
+    color: '#666',
+  },
+  paymentButtonTextActive: {
+    color: '#C47DE8',
+    fontWeight: '600',
+  },
+  buttonContainer: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 24,
-    marginBottom: 32,
+    gap: 8,
+    marginTop: 12,
+  },
+  cancelButtonContainer: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
   },
   cancelButton: {
-    flex: 1,
-    padding: 16,
+    backgroundColor: '#4850E4FF',
+    paddingHorizontal: 30,
+    paddingVertical: 10,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E0E0E0',
-    borderRadius: 8,
-    alignItems: 'center',
   },
   cancelButtonText: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: 10,
+    fontWeight: '600',
+    color: 'white',
   },
   completeButton: {
     flex: 1,
-    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    padding: 12,
     backgroundColor: '#C47DE8',
     borderRadius: 8,
-    alignItems: 'center',
   },
   completeButtonDisabled: {
     backgroundColor: '#E0E0E0',
   },
   completeButtonText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: '#fff',
   },
+  modalOverlay: {
+  flex: 1,
+  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  justifyContent: 'flex-end',
+},
+modalContent: {
+  backgroundColor: '#fff',
+  borderTopLeftRadius: 20,
+  borderTopRightRadius: 20,
+  padding: 20,
+  maxHeight: '80%',
+},
+modalHeader: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: 20,
+},
+modalTitle: {
+  fontSize: 20,
+  fontWeight: 'bold',
+  color: '#000',
+},
 });

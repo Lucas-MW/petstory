@@ -16,7 +16,7 @@ const CheckInSchema = new mongoose.Schema({
   },
   paymentMethod: { 
     type: String, 
-    enum: ['cash', 'card', 'zelle', 'venmo', 'applepay', 'other'] 
+    enum: ['cash', 'card', 'zelle', 'venmo', 'other'] 
   },
   checkInTime: { type: Date, default: Date.now },
   checkOutTime: { type: Date },
