@@ -25,6 +25,7 @@ interface CheckInDetail {
   _id: string;
   petId: string;
   petName: string;
+  customerId: string;
   customerName: string;
   phoneNumber: string;
   imageKey: string;
@@ -39,11 +40,11 @@ interface CheckInDetail {
 }
 
 const PAYMENT_METHODS = [
-  { label: 'Cash', value: 'Cash' },
-  { label: 'Card', value: 'Card' },
-  { label: 'Zelle', value: 'Zelle' },
-  { label: 'Venmo', value: 'Venmo' },
-  { label: 'Other', value: 'Other' },
+  { label: 'Cash', value: 'cash' },
+  { label: 'Card', value: 'card' },
+  { label: 'Zelle', value: 'zelle' },
+  { label: 'Venmo', value: 'venmo' },
+  { label: 'Other', value: 'other' },
 ];
 
 export default function CheckInDetailPage() {
@@ -87,7 +88,74 @@ export default function CheckInDetailPage() {
     setIsModalVisible(true);
   }
 
-const handleCancel = async (checkInItem: CheckInDetail) => {
+  const handleComplete = async (checkInItem: CheckInDetail) => {
+    if (!checkInItem?.paymentMethod) {
+      alert('Please select a payment method before complete.');
+      return;
+    }
+
+    const finalTotal = checkInItem.totalPrice + (checkInItem.tipPrice || 0) + (checkInItem.additionalCharges || 0);
+
+        //create visit record
+    const visitRecord = {
+      petId: checkInItem.petId,
+      petName: checkInItem.petName,
+      customerId: checkInItem.customerId,
+      customerName: checkInItem.customerName,
+      phoneNumber: checkInItem.phoneNumber,
+      services: checkInItem.services,
+      baseprice: checkInItem.totalPrice,
+      tip: checkInItem.tipPrice || 0,
+      additionalCharges: checkInItem.additionalCharges || 0,
+      totalPrice: finalTotal,
+      checkInTime: checkInItem.checkInTime,
+      checkOutTime: new Date().toISOString(),
+      paymentMethod: checkInItem.paymentMethod,
+      status: 'completed',
+    };
+
+    try {
+      const response = await fetch(`http://192.168.4.20:3000/api/checkin/${checkInItem._id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipPrice: checkInItem.tipPrice || 0,
+          additionalCharges: checkInItem.additionalCharges || 0,
+          totalPrice: finalTotal,
+          paymentMethod: checkInItem.paymentMethod,
+          status: 'completed',
+        }),
+      });
+
+      console.log('PATCH response status:', response.status);
+  const responseData = await response.json();
+  console.log('PATCH response data:', responseData);
+
+      if (!response.ok) {
+        throw new Error('Failed to update check-in.');
+      }
+
+    // save to history/database
+    const historyResponse = await fetch('http://192.168.4.20:3000/api/history/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(visitRecord),
+    });
+
+    if (!historyResponse.ok) {
+      throw new Error('Failed to create visit record.');
+    }
+    setCheckIn((prev) => prev.filter(item => item._id !== checkInItem._id));
+    setIsModalVisible(false);
+    setSelectedCheckIn(null);
+      alert(`${checkInItem.petName} checked out successfully!`);
+      } catch (error) {
+        console.error('Completion error:', error);
+        alert('An error occurred while completing the check-out. Please try again.');
+      }
+    };
+  
+    const handleCancel = async (checkInItem: CheckInDetail) => {
   const performCancel = async (checkInItem: CheckInDetail) => {
     try {
       const response = await fetch(`http://192.168.4.20:3000/api/checkin/${checkInItem._id}`, {
@@ -116,40 +184,6 @@ const handleCancel = async (checkInItem: CheckInDetail) => {
     ]
   );
 };
-
-  const handleComplete = async (checkInItem: CheckInDetail) => {
-    if (!checkInItem?.paymentMethod) {
-      alert('Please select a payment method before complete.');
-      return;
-    }
-
-    try {
-      
-      const finalTotal = checkInItem.totalPrice + (checkInItem.tipPrice || 0) + (checkInItem.additionalCharges || 0);
-
-      const response = await fetch(`http://192.168.4.20:3000/api/checkin/${checkInItem._id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tipPrice: checkInItem.tipPrice || 0,
-          additionalCharges: checkInItem.additionalCharges || 0,
-          totalPrice: finalTotal,
-          paymentMethod: checkInItem.paymentMethod,
-          status: 'Completed',
-        }),
-      });
-
-      if (response.ok) {
-        setCheckIn((prev) => prev.filter(item => item._id === checkInItem._id ? { ...item, status: 'Completed' } : item));
-        setIsModalVisible(false);
-        setSelectedCheckIn(null);
-        alert(`${checkInItem.petName}, ${checkInItem.phoneNumber} marked as completed.`);
-        
-      }
-    } catch (error) {
-      console.error('Complete error:', error);
-    }
-  };
 
     if (isLoading) {
     return (
