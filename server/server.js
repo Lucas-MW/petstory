@@ -31,6 +31,9 @@ app.use('/api/history', historyRoutes);
 const checkInRoutes = require('./routes/checkin');
 app.use('/api/checkin', checkInRoutes);
 
+const dashboardRoutes = require('./routes/dashboard');
+app.use('/api/dashboard', dashboardRoutes);
+
 //start server
 app.listen (PORT, () => {
   console.log (`Server is running on port ${PORT}`);

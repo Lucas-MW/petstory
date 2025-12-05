@@ -5,10 +5,9 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface Visit {
-  date: string;
+  checkOutTime: string;  // Changed from 'date'
+  services: string[];    // Changed from serviceType, it's an array
   totalPrice: number;
-  tip: number;
-  paymentMethod: string;
 }
 
 export default function PetProfile() {
@@ -29,8 +28,8 @@ export default function PetProfile() {
   const fetchProfile = async () => {
     try {
       const response = await fetch(`http://192.168.4.20:3000/api/history/pet/${petId}`);
-      console.log('Response status:', response.status);
       const data = await response.json();
+      console.log('Profile data:', data);
       setHistory(data);
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -70,9 +69,9 @@ export default function PetProfile() {
 };
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('en-US', {
-      month: 'short',
+      month: 'numeric',
       day: 'numeric',
-      year: 'numeric'
+      year: '2-digit'
     });
   };
 
@@ -127,23 +126,16 @@ export default function PetProfile() {
 
         {isLoading ? (
           <ActivityIndicator size="large" color="#C47DE8FF" style={styles.loader} />
-        ) : history.length === 0 ? (
+        ) : !Array.isArray(history) || history.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>No visit history yet</Text>
           </View>
         ) : (
             history.slice(0, 5).map((visit, index) => (
               <View key={index} style={styles.visitCard}>
-                <View style={styles.visitHeader}>
-                  <Text style={styles.visitDate}>{formatDate(visit.date)}</Text>
-                  <Text style={styles.visitPrice}>${visit.totalPrice.toFixed(2)}</Text>
-                </View>
-                {visit.tip > 0 && (
-                  <Text style={styles.visitTip}>Tip: ${visit.tip.toFixed(2)}</Text>
-                )}
-                <Text style={styles.visitPayment}>
-                  Payment: {visit.paymentMethod?.toUpperCase() || 'N/A'}
-                </Text>
+                <Text style={styles.visitDate}>{formatDate(visit.checkOutTime)}</Text>
+                <Text style={styles.visitService}>{visit.services.join(', ')}</Text>
+                <Text style={styles.visitPrice}>${visit.totalPrice.toFixed(2)}</Text>
               </View>
             ))
         )}
@@ -294,6 +286,9 @@ infoContainerText: {
     color: '#999'
   },
   visitCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     backgroundColor: '#fff',
     padding: 16,
     borderRadius: 12,
@@ -301,19 +296,17 @@ infoContainerText: {
     borderWidth: 1,
     borderColor: '#DEE1E6FF',
   },
-  visitHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8
-  },
   visitDate: {
-    fontSize: 16,
-    fontWeight: '600'
+    fontSize: 14,
+    fontWeight: '600',
+    flex: 1
   },
   visitPrice: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#C47DE8FF'
+    color: '#C47DE8FF',
+    minWidth: 70,
+    textAlign: 'right'
   },
   visitTip: {
     fontSize: 14,
@@ -341,5 +334,12 @@ infoContainerText: {
     borderWidth: 1,
     borderColor: '#DEE1E6FF',
     color: 'black',
+  },
+  visitService: {
+    fontSize: 14,
+    color: '#C47DE8FF',
+    fontWeight: '500',
+    flex: 2,
+    marginHorizontal: 8
   },
 });

@@ -78,7 +78,7 @@ router.get('/:id', async (req, res) => {
 //PATCH update check-in fields
 router.patch('/:id', async (req, res) => {
   try {
-    const {totalPrice, tipPrice, services, paymentMethod} = req.body;
+    const {additionalCharges, totalPrice, tipPrice, paymentMethod, status} = req.body;
     const checkIn = await CheckIn.findById(req.params.id);
 
     if (!checkIn) {
@@ -87,8 +87,9 @@ router.patch('/:id', async (req, res) => {
 
     if (totalPrice !== undefined) checkIn.totalPrice = totalPrice;
     if (tipPrice !== undefined) checkIn.tipPrice = tipPrice;
-    if (services !== undefined) checkIn.services = services;
+    if (additionalCharges !== undefined) checkIn.additionalCharges = additionalCharges;
     if (paymentMethod !== undefined) checkIn.paymentMethod = paymentMethod;
+    if (status !== undefined) checkIn.status = status;
 
     const updatedCheckIn = await checkIn.save();
     res.json(updatedCheckIn);
