@@ -1,54 +1,83 @@
-<<<<<<< HEAD
-# petstory
-=======
-# Welcome to your Expo app 👋
+# Pet Grooming Management App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A mobile application for managing a dog grooming business, built for my mom's grooming shop.
 
-## Get started
+## Problem Statement
 
-1. Install dependencies
+My mom runs a small dog grooming business and was tracking everything on paper. Her main challenges were:
+- Finding customer records quickly (she remembers dogs by name, not owners)
+- Tracking daily revenue
+- Recording visit history for pricing consistency
 
-   ```bash
-   npm install
-   ```
+## Solution
 
-2. Start the app
+A mobile-first app that lets her:
+- Search pets by name with instant results
+- Check in dogs with service selection
+- Complete checkouts with tip and payment tracking
+- View daily/monthly/yearly revenue reports
+- Auto-fill prices based on visit history
 
-   ```bash
-   npx expo start
-   ```
+## Tech Stack
 
-In the output, you'll find options to open the app in a
+**Frontend:**
+- React Native / Expo
+- TypeScript
+- React Navigation
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+**Backend:**
+- Node.js
+- Express
+- MongoDB
+- Mongoose
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+**Cloud Services:**
+- Railway (backend hosting)
+- MongoDB Atlas (database)
 
-## Get a fresh project
+## Key Features
 
-When you're ready, run:
+- **Pet-first search**: Optimized for searching by pet name rather than owner
+- **Quick check-in flow**: Reduced processing time from 5 minutes to 30 seconds
+- **Automated pricing**: Auto-fills prices based on pet's visit history
+- **Revenue tracking**: Real-time daily revenue with payment method breakdown
+- **Tax-ready reports**: Generate reports for any date range for tax purposes
 
+## Database Schema
+
+- **Customers**: Owner information
+- **Pets**: Pet profiles linked to owners
+- **DailyHistory**: Completed visits with pricing and payment details
+- **CheckIns**: Active grooming sessions
+
+## Screenshots
+
+[Add your 5 screenshots here]
+
+## Future Enhancements
+
+- Photo upload for before/after grooming
+- SMS notifications when pet is ready
+- Online booking system
+- Inventory management for grooming supplies
+- Customer loyalty/rewards program
+
+## Installation
 ```bash
-npm run reset-project
+# Backend
+cd backend
+npm install
+npm start
+
+# Frontend
+cd frontend
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Environment Variables
+```
+MONGODB_URI=your_mongodb_connection_string
+PORT=3000
+```
 
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
->>>>>>> 512da15 (initial commit - petstory setup)
