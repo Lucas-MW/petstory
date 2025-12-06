@@ -1,83 +1,95 @@
-# Pet Grooming Management App
+# PetStory
 
-A mobile application for managing a dog grooming business, built for my mom's grooming shop.
+A mobile app I built to help a pet grooming shop manage its daily operations. This was my first time building something that someone would actually use in a real business.
 
-## Problem Statement
+## What It Does
 
-My mom runs a small dog grooming business and was tracking everything on paper. Her main challenges were:
-- Finding customer records quickly (she remembers dogs by name, not owners)
-- Tracking daily revenue
-- Recording visit history for pricing consistency
+The shop owner needed to:
+- Look up customers quickly (they were using a paper notebook)
+- Track who's checked in for grooming
+- Record payments and see daily/monthly revenue
+- Keep a history of each pet's visits
 
-## Solution
+I built this app to solve those problems.
 
-A mobile-first app that lets her:
-- Search pets by name with instant results
-- Check in dogs with service selection
-- Complete checkouts with tip and payment tracking
-- View daily/monthly/yearly revenue reports
-- Auto-fill prices based on visit history
-
-## Tech Stack
+## The Stack
 
 **Frontend:**
-- React Native / Expo
-- TypeScript
-- React Navigation
+- React Native with Expo (so it works on both iPhone and Android)
+- TypeScript (I added this after getting bugs from typos in property names)
+- Expo Router for navigation
 
 **Backend:**
-- Node.js
-- Express
-- MongoDB
-- Mongoose
+- Node.js with Express
+- MongoDB (first time using it - I chose it because the data structure kept changing as I learned what the shop needed)
 
-**Cloud Services:**
-- Railway (backend hosting)
-- MongoDB Atlas (database)
+## What I Learned
 
-## Key Features
+**Things that went well:**
+- The search feature works fast even with a few hundred customers
+- Phone number formatting looks clean and handles different input formats
+- The reports page accurately breaks down revenue by payment method (after I fixed a bug where I used `=` instead of `+=`)
 
-- **Pet-first search**: Optimized for searching by pet name rather than owner
-- **Quick check-in flow**: Reduced processing time from 5 minutes to 30 seconds
-- **Automated pricing**: Auto-fills prices based on pet's visit history
-- **Revenue tracking**: Real-time daily revenue with payment method breakdown
-- **Tax-ready reports**: Generate reports for any date range for tax purposes
+**Things I'd do differently:**
+- I hardcoded the API URL (`http://192.168.4.20:3000`) which only works on my local network. Should use environment variables.
+- No authentication - anyone can open the app and see everything. This is fine for now since only one person uses it on their device, but it's not production-ready.
+- The image upload feature is stubbed out (pets just get default dog/cat images). I ran out of time to implement proper photo storage.
+- I wrote tests for the search page but didn't finish testing the rest. I know this is important but I was learning testing as I went.
 
-## Database Schema
+**Bugs I fixed:**
+- Payment totals were showing wrong because I was overwriting instead of accumulating (learned about reduce patterns)
+- Date ranges weren't inclusive, so end-of-month reports missed the last day
+- The check-in modal would disappear when you changed the search filter (moved it outside the conditional)
 
-- **Customers**: Owner information
-- **Pets**: Pet profiles linked to owners
-- **DailyHistory**: Completed visits with pricing and payment details
-- **CheckIns**: Active grooming sessions
+## How to Run It
 
-## Screenshots
-
-[Add your 5 screenshots here]
-
-## Future Enhancements
-
-- Photo upload for before/after grooming
-- SMS notifications when pet is ready
-- Online booking system
-- Inventory management for grooming supplies
-- Customer loyalty/rewards program
-
-## Installation
+**Backend:**
 ```bash
-# Backend
-cd backend
+cd server
 npm install
 npm start
+# Runs on port 3000
+```
 
-# Frontend
-cd frontend
+**Frontend:**
+```bash
 npm install
 npx expo start
+# Scan QR code with Expo Go app
 ```
 
-## Environment Variables
+**Note:** You need MongoDB running locally. I haven't set up a hosted database yet.
+
+## Project Structure
+
 ```
-MONGODB_URI=your_mongodb_connection_string
-PORT=3000
+app/(dashboard-tabs)/    # Main screens (dashboard, search, check-in, reports)
+app/customer/           # New customer registration
+app/pet/               # Pet profile and history
+server/routes/         # API endpoints
+server/models/         # MongoDB schemas
 ```
+
+## What's Missing
+
+- Authentication/authorization
+- Image uploads for pet photos
+- Data backup (it's all local MongoDB right now)
+- Proper error handling in a lot of places
+- The UI works but isn't polished - some spacing is inconsistent
+- No data validation on the frontend (relies entirely on backend)
+
+## Why I Built This
+
+My friend owns a small grooming shop and was tracking everything in a notebook. When customers called asking "when was Bella's last visit?", they had to flip through pages. I saw it as a chance to build something useful while learning React Native and MongoDB.
+
+It's not perfect, but it works and they use it every day. That feels good.
+
+## What I'm Working On Next
+
+- Moving the database to MongoDB Atlas so it's not just local
+- Adding a simple PIN code for security
+- Fixing the spacing issues in the UI
+- Writing more tests
+
 
