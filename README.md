@@ -1,6 +1,6 @@
 # PetStory
 
-A mobile app I built to help a pet grooming shop manage its daily operations. This was my first time building something that someone would actually use in a real business.
+A mobile app I built to help my mom's pet grooming shop manage its daily operations. This was my first time building something that someone would actually use in a real business.
 
 ## What It Does
 
@@ -81,9 +81,9 @@ server/models/         # MongoDB schemas
 
 ## Why I Built This
 
-My friend owns a small grooming shop and was tracking everything in a notebook. When customers called asking "when was Bella's last visit?", they had to flip through pages. I saw it as a chance to build something useful while learning React Native and MongoDB.
+My mom owns a small grooming shop and was tracking everything in a notebook. When customers called asking "when was Bella's last visit?", they had to flip through pages. I saw it as a chance to build something useful while learning React Native and MongoDB.
 
-It's not perfect, but it works and they use it every day. That feels good.
+It's not perfect, but it works and what we use it every day. That feels good.
 
 ## What I'm Working On Next
 
