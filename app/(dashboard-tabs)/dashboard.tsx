@@ -1,13 +1,23 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 export default function PageDashboard() {
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [completedCount, setCompletedCount] = useState(0);
   const [activeCount, setActiveCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+
+  const getTodayDate = () => {
+    const today = new Date();
+    return today.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  };
 
   const fetchDashboardData = async () => {
     setIsLoading(true);
@@ -40,7 +50,8 @@ export default function PageDashboard() {
     return (
       <View style={styles.container}>
         <View style={styles.headerContainer}>
-          <Text style={styles.headerText}>Dashboard</Text>
+          <Text style={styles.greetingText}>Hello,</Text>
+          <Text style={styles.dateText}>{getTodayDate()}</Text>
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#C47DE8FF" />
@@ -52,40 +63,38 @@ export default function PageDashboard() {
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
-        <Text style={styles.headerText}>Dashboard</Text>
+        <Text style={styles.greetingText}>Hello,</Text>
+        <Text style={styles.dateText}>{getTodayDate()}</Text>
       </View>
 
-      <ScrollView style={styles.contentContainer}>
-        <View style={styles.dashboardCard}>
-          <Text style={styles.title}>Today's Summary</Text>
-          
-          <View style={styles.statsRow}>
-            <View style={styles.stat}>
-              <View style={styles.iconCircle}>
-                <Ionicons name="cash-outline" size={24} color="#C47DE8FF" />
-              </View>
-              <Text style={styles.statValue}>${totalRevenue.toFixed(2)}</Text>
-              <Text style={styles.statLabel}>Revenue</Text>
-            </View>
-            
-            <View style={styles.stat}>
-              <View style={styles.iconCircle}>
-                <Ionicons name="checkmark-circle-outline" size={24} color="#C47DE8FF" />
-              </View>
-              <Text style={styles.statValue}>{completedCount}</Text>
-              <Text style={styles.statLabel}>Completed</Text>
-            </View>
-            
-            <View style={styles.stat}>
-              <View style={styles.iconCircle}>
-                <Ionicons name="time-outline" size={24} color="#C47DE8FF" />
-              </View>
-              <Text style={styles.statValue}>{activeCount}</Text>
-              <Text style={styles.statLabel}>Active</Text>
-            </View>
+      <View style={styles.contentContainer}>
+        {/* Today's Total Revenue */}
+        <View style={styles.statCard}>
+          <View style={styles.labelRow}>
+            <Ionicons name="cash-outline" size={24} color="#C47DE8FF" />
+            <Text style={styles.statCardLabel}>Today's Total Revenue</Text>
           </View>
+          <Text style={styles.statCardValue}>${totalRevenue.toFixed(2)}</Text>
         </View>
-      </ScrollView>
+
+        {/* Number of Completed Checkouts */}
+        <View style={styles.statCard}>
+          <View style={styles.labelRow}>
+            <Ionicons name="checkmark-circle-outline" size={24} color="#C47DE8FF" />
+            <Text style={styles.statCardLabel}>Number of Completed Checkouts</Text>
+          </View>
+          <Text style={styles.statCardValue}>{completedCount}</Text>
+        </View>
+
+        {/* Active Check-ins */}
+        <View style={styles.statCard}>
+          <View style={styles.labelRow}>
+            <Ionicons name="time-outline" size={24} color="#C47DE8FF" />
+            <Text style={styles.statCardLabel}>Active Check-ins</Text>
+          </View>
+          <Text style={styles.statCardValue}>{activeCount}</Text>
+        </View>
+      </View>
     </View>
   );
 }
@@ -98,69 +107,56 @@ const styles = StyleSheet.create({
     paddingTop: '20%',
   },
   headerContainer: {
-    alignItems: 'center',
     borderColor: '#DEE1E6FF',
     borderBottomWidth: 2,
     paddingBottom: '5%',
   },
-  headerText: {
-    fontSize: 24,
+  greetingText: {
+    fontSize: 28,
     fontWeight: 'bold',
+    color: '#000',
+  },
+  dateText: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
   },
   contentContainer: {
+    flex: 1,
     marginTop: '5%',
+    gap: 16,
   },
   loadingContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dashboardCard: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 16,
-    borderColor: '#DEE1E6FF',
-    borderWidth: 1,
-    padding: 20,
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 20,
-    color: '#323742FF',
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  stat: {
+  statCard: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F3F4F6',
     borderRadius: 12,
     borderColor: '#DEE1E6FF',
     borderWidth: 1,
-    padding: 16,
-    alignItems: 'center',
-  },
-  iconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#F0E5F7FF',
+    padding: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
   },
-  statValue: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#323742FF',
-    marginBottom: 4,
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
   },
-  statLabel: {
-    fontSize: 14,
+  statCardLabel: {
+    fontSize: 16,
+    fontWeight: '600',
     color: '#666',
+    marginBottom: 8,
     textAlign: 'center',
+  },
+  statCardValue: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#000',
   },
 });
